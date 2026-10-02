@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Credit Card Tracker</title>
+  
+  <!-- PWA Meta Tags for Standalone Mobile App -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CC Tracker">
+  <meta name="application-name" content="Credit Card Tracker">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/96/bank-card-back-side.png">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/bank-card-back-side.png">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-10">
+
+  <!-- Header Bar -->
+  <header class="sticky top-0 z-30 bg-slate-900 text-white px-4 py-2.5 shadow-md flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-sm shadow">
+        💳
+      </div>
+      <div>
+        <h1 class="text-sm font-semibold tracking-wide">Credit Card Tracker</h1>
+        <p class="text-[10px] text-slate-400">ตัดรอบทุกวันที่ 5</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="loadData(true)" class="p-1.5 text-slate-300 hover:text-white rounded-full active:scale-95 transition" title="รีเฟรช">
+        <svg id="refresh-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
+
+    <!-- Section 1: Billing Cycles Summary Cards -->
+    <section class="space-y-2">
+      
+      <!-- 1.1 รอบก่อนหน้า: แถวเดียว กะทัดรัด ไม่กินที่ -->
+      <div class="bg-white rounded-xl px-3 py-2 shadow-xs border border-slate-200/90 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 whitespace-nowrap">รอบก่อน</span>
+          <span id="prev-range" class="text-[11px] text-slate-400 font-mono truncate">กำลังโหลด...</span>
+        </div>
+        <div class="flex items-center gap-2.5 shrink-0">
+          <div class="flex items-baseline gap-1">
+            <span class="text-[10px] text-slate-400">รวม</span>
+            <span id="prev-total" class="font-bold text-slate-800 text-xs sm:text-sm tabular-nums">฿0</span>
+          </div>
+          <div class="h-3.5 w-px bg-slate-200"></div>
+          <div class="flex items-center gap-2 text-[11px]">
+            <span class="text-blue-600 font-medium">👤 <span id="prev-personal" class="tabular-nums">฿0</span></span>
+            <span class="text-purple-600 font-medium">👥 <span id="prev-sharing" class="tabular-nums">฿0</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1.2 รอบปัจจุบัน: ยอดรวมตัวเลขใหญ่เท่าเดิม ประหยัดพื้นที่ลง 50% -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-3 shadow-md border border-slate-800">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500 text-slate-950">รอบปัจจุบัน</span>
+            <span id="cur-range" class="text-xs text-slate-300 font-mono">กำลังโหลด...</span>
+          </div>
+          <span class="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> กำลังสะสม
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-0.5">
+          <!-- ฝั่งซ้าย: ยอดรวม ตัวเลขใหญ่สะใจเท่าเดิม -->
+          <div class="min-w-0">
+            <span class="text-[10px] text-slate-400 block -mb-1">ยอดรวมรอบนี้</span>
+            <span class="text-3xl font-black tracking-tight text-white tabular-nums truncate block" id="cur-total">฿0</span>
+          </div>
+
+          <!-- ฝั่งขวา: แยก Personal & Sharing กะทัดรัดประกบข้าง -->
+          <div class="flex flex-col gap-1 shrink-0 bg-white/10 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 min-w-[120px]">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-blue-300 text-[10px] font-medium flex items-center gap-0.5">👤 เดี่ยว</span>
+              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-personal">฿0</span>
+            </div>
+            <div class="h-px bg-white/10"></div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-purple-300 text-[10px] font-medium flex items-center gap-0.5">👥 หาร</span>
+              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-sharing">฿0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Section 2: Form บันทึกรายการใหม่ -->
+    <section class="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-200">
+      <h2 class="text-xs font-semibold text-slate-800 mb-2.5 flex items-center gap-1.5">
+        <span>📝 บันทึกรายการใช้จ่าย</span>
+      </h2>
+
+      <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-2.5">
+        <!-- ยอดเงิน -->
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ยอดเงิน (บาท)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-base">฿</span>
+            <input 
+              type="number" 
+              step="0.01" 
+              inputmode="decimal" 
+              required 
+              id="amount" 
+              placeholder="0.00" 
+              class="w-full pl-8 pr-3 py-2 text-base font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+            >
+          </div>
+        </div>
+
+        <!-- Memo บันทึกช่วยจำ -->
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">รายการ / Memo</label>
+          <input 
+            type="text" 
+            required 
+            id="memo" 
+            placeholder="เช่น ข้าวกลางวัน, Netflix, ช้อปปิ้ง" 
+            class="w-full px-3 py-2 text-xs sm:text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+          >
+        </div>
+
+        <!-- วันที่ & ประเภท -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">วันที่ทำรายการ</label>
+            <input 
+              type="date" 
+              required 
+              id="date" 
+              class="w-full px-2.5 py-1.5 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+            >
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ประเภท</label>
+            <div class="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl">
+              <button 
+                type="button" 
+                id="btn-type-personal" 
+                onclick="setType('Personal')"
+                class="py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition"
+              >
+                👤 เดี่ยว
+              </button>
+              <button 
+                type="button" 
+                id="btn-type-sharing" 
+                onclick="setType('Sharing')"
+                class="py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition"
+              >
+                👥 หาร
+              </button>
+            </div>
+            <input type="hidden" id="type" value="Personal">
+          </div>
+        </div>
+
+        <!-- ปุ่มกดบันทึก: ตอบสนองทันที 0ms -->
+        <button 
+          type="submit" 
+          id="btn-submit"
+          class="w-full mt-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-medium text-xs sm:text-sm rounded-xl shadow transition flex items-center justify-center gap-1.5"
+        >
+          <span>➕ บันทึกข้อมูล</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Section 3: รายการทั้งหมด (Recent Transactions) -->
+    <section class="space-y-2">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-xs font-semibold text-slate-800">🕒 รายการทั้งหมด</h2>
+        <span id="tx-count" class="text-[11px] text-slate-400">0 รายการ</span>
+      </div>
+
+      <div id="tx-list" class="space-y-2">
+        <div class="text-center py-6 text-slate-400 text-xs">
+          กำลังโหลดรายการ...
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-4 shadow-xl border border-slate-100 space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <h3 class="font-semibold text-slate-900 text-sm">✏️ แก้ไขรายการ</h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+
+      <form id="edit-form" onsubmit="handleEditSubmit(event)" class="space-y-3">
+        <input type="hidden" id="edit-id">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">ยอดเงิน (บาท)</label>
+          <input 
+            type="number" 
+            step="0.01" 
+            inputmode="decimal" 
+            required 
+            id="edit-amount" 
+            class="w-full px-3 py-2 text-base font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">รายการ / Memo</label>
+          <input 
+            type="text" 
+            required 
+            id="edit-memo" 
+            class="w-full px-3 py-2 text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">วันที่</label>
+            <input 
+              type="date" 
+              required 
+              id="edit-date" 
+              class="w-full px-2 py-2 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">ประเภท</label>
+            <select id="edit-type" class="w-full px-2 py-2 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Personal">👤 Personal (เดี่ยว)</option>
+              <option value="Sharing">👥 Sharing (หาร)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button 
+            type="button" 
+            onclick="closeEditModal()" 
+            class="flex-1 py-2 text-xs font-medium rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+          >
+            ยกเลิก
+          </button>
+          <button 
+            type="submit" 
+            id="btn-edit-save"
+            class="flex-1 py-2 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow"
+          >
+            บันทึกการแก้ไข
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl border border-slate-100 space-y-3 text-center">
+      <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-lg font-bold">
+        🗑️
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-sm">ยืนยันการลบรายการ?</h3>
+        <p class="text-xs text-slate-500 mt-1 break-words" id="delete-info">ข้อมูลรายการนี้จะถูกลบออกจาก Google Sheet</p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button 
+          type="button" 
+          onclick="closeDeleteModal()" 
+          class="flex-1 py-2 text-xs font-medium rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+        >
+          ยกเลิก
+        </button>
+        <button 
+          type="button" 
+          id="btn-confirm-delete"
+          onclick="executeDelete()" 
+          class="flex-1 py-2 text-xs font-semibold rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow"
+        >
+          ลบรายการ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2 rounded-full shadow-lg opacity-0 transition-opacity pointer-events-none z-50 flex items-center gap-2">
+    <span id="toast-icon">✅</span>
+    <span id="toast-message">บันทึกเรียบร้อย</span>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTcQ1sCsqP1_EQoU7PFtVL4oWdPsZDz5PhV9nnBVvAoZNM6t73zdXPPuuMfD1Lj4wL3g/exec';
+    let cachedTransactions = [];
+    let deleteTargetId = null;
+    let cycleDates = null;
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('date').value = today;
+      initCycleDates();
+      loadData(false);
+    });
+
+    // Unified Backend API Caller (Works on both Apps Script AND GitHub Pages!)
+    function callBackend(action, data) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return new Promise((resolve, reject) => {
+          const runner = google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject);
+          if (action === 'getData') runner.getInitialData();
+          else if (action === 'add') runner.addTransaction(data);
+          else if (action === 'update') runner.updateTransaction(data);
+          else if (action === 'delete') runner.deleteTransaction(data);
+        });
+      } else {
+        return fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, data: data, id: data })
+        }).then(res => res.json());
+      }
+    }
+
+    function initCycleDates() {
+      const now = new Date();
+      const current = calcBillingCycle(now);
+      const prevDate = new Date(current.start.getTime() - 86400000);
+      const previous = calcBillingCycle(prevDate);
+
+      const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      const formatRange = (c) => `5 ${thaiMonths[c.start.getMonth()]} - 4 ${thaiMonths[c.end.getMonth()]}`;
+
+      cycleDates = {
+        current: {
+          startMs: current.start.getTime(),
+          endMs: current.end.getTime(),
+          range: formatRange(current)
+        },
+        previous: {
+          startMs: previous.start.getTime(),
+          endMs: previous.end.getTime(),
+          range: formatRange(previous)
+        }
+      };
+
+      document.getElementById('prev-range').textContent = cycleDates.previous.range;
+      document.getElementById('cur-range').textContent = cycleDates.current.range;
+    }
+
+    function calcBillingCycle(dateObj) {
+      const d = new Date(dateObj);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const day = d.getDate();
+
+      let sY = y, sM = m, eY = y, eM = m + 1;
+      if (day < 5) {
+        sM = m - 1;
+        eM = m;
+        if (sM < 0) { sM = 11; sY = y - 1; }
+      } else {
+        if (eM > 11) { eM = 0; eY = y + 1; }
+      }
+      return {
+        start: new Date(sY, sM, 5, 0, 0, 0, 0),
+        end: new Date(eY, eM, 4, 23, 59, 59, 999)
+      };
+    }
+
+    function recalculateSummary() {
+      if (!cycleDates) return;
+      let curTotal = 0, curPersonal = 0, curSharing = 0;
+      let prevTotal = 0, prevPersonal = 0, prevSharing = 0;
+
+      cachedTransactions.forEach(tx => {
+        const parts = String(tx.date).split('-');
+        if (parts.length === 3) {
+          const txTime = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0).getTime();
+          const amt = parseFloat(tx.amount) || 0;
+          const isSharing = String(tx.type).toLowerCase() === 'sharing';
+
+          if (txTime >= cycleDates.current.startMs && txTime <= cycleDates.current.endMs) {
+            curTotal += amt;
+            if (isSharing) curSharing += amt;
+            else curPersonal += amt;
+          } else if (txTime >= cycleDates.previous.startMs && txTime <= cycleDates.previous.endMs) {
+            prevTotal += amt;
+            if (isSharing) prevSharing += amt;
+            else prevPersonal += amt;
+          }
+        }
+      });
+
+      document.getElementById('cur-total').textContent = formatCurrency(curTotal);
+      document.getElementById('cur-personal').textContent = formatCurrency(curPersonal);
+      document.getElementById('cur-sharing').textContent = formatCurrency(curSharing);
+
+      document.getElementById('prev-total').textContent = formatCurrency(prevTotal);
+      document.getElementById('prev-personal').textContent = formatCurrency(prevPersonal);
+      document.getElementById('prev-sharing').textContent = formatCurrency(prevSharing);
+    }
+
+    function showToast(message, icon = '✅') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-icon').textContent = icon;
+      document.getElementById('toast-message').textContent = message;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2000);
+    }
+
+    function setType(type) {
+      document.getElementById('type').value = type;
+      const btnPersonal = document.getElementById('btn-type-personal');
+      const btnSharing = document.getElementById('btn-type-sharing');
+
+      if (type === 'Personal') {
+        btnPersonal.className = 'py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition';
+        btnSharing.className = 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
+      } else {
+        btnPersonal.className = 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
+        btnSharing.className = 'py-1 text-xs font-semibold rounded-lg bg-purple-600 text-white shadow-xs transition';
+      }
+    }
+
+    function formatCurrency(amount) {
+      return '฿' + Number(amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function loadData(showSpin = false) {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (showSpin) refreshIcon.classList.add('animate-spin');
+
+      callBackend('getData')
+        .then((data) => {
+          refreshIcon.classList.remove('animate-spin');
+          onDataLoaded(data);
+        })
+        .catch((err) => {
+          refreshIcon.classList.remove('animate-spin');
+          alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + (err.message || err));
+        });
+    }
+
+    function onDataLoaded(data) {
+      if (!data) return;
+      document.getElementById('prev-range').textContent = data.previousCycle.dateRange;
+      document.getElementById('prev-total').textContent = formatCurrency(data.previousCycle.total);
+      document.getElementById('prev-personal').textContent = formatCurrency(data.previousCycle.personal);
+      document.getElementById('prev-sharing').textContent = formatCurrency(data.previousCycle.sharing);
+
+      document.getElementById('cur-range').textContent = data.currentCycle.dateRange;
+      document.getElementById('cur-total').textContent = formatCurrency(data.currentCycle.total);
+      document.getElementById('cur-personal').textContent = formatCurrency(data.currentCycle.personal);
+      document.getElementById('cur-sharing').textContent = formatCurrency(data.currentCycle.sharing);
+
+      cachedTransactions = data.transactions || [];
+      renderTransactions(cachedTransactions);
+    }
+
+    function renderTransactions(list) {
+      const container = document.getElementById('tx-list');
+      const countEl = document.getElementById('tx-count');
+      countEl.textContent = `${list.length} รายการ`;
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-xl p-6 text-center text-slate-400 border border-slate-200">
+            <p class="text-xs">ยังไม่มีรายการบันทึก</p>
+            <p class="text-[11px] mt-0.5">กรอกข้อมูลด้านบนเพื่อเริ่มบันทึกรายการ</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(tx => {
+        const isSharing = String(tx.type).toLowerCase() === 'sharing';
+        const badgeColor = isSharing ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+        const badgeText = isSharing ? '👥 Sharing' : '👤 Personal';
+
+        return `
+          <div class="bg-white rounded-xl p-3 border border-slate-200/90 shadow-xs flex items-center justify-between gap-2.5">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded ${badgeColor}">
+                  ${badgeText}
+                </span>
+                <span class="text-[11px] text-slate-400 font-mono">${tx.date}</span>
+              </div>
+              <p class="text-xs sm:text-sm font-semibold text-slate-800 truncate" title="${escapeHtml(tx.memo)}">
+                ${escapeHtml(tx.memo || 'ไม่มี Memo')}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-sm sm:text-base font-bold text-slate-900 tabular-nums whitespace-nowrap">
+                ${formatCurrency(tx.amount)}
+              </span>
+              <div class="flex items-center gap-1 border-l border-slate-200 pl-2">
+                <button 
+                  type="button"
+                  onclick="openEditModal('${tx.id}')" 
+                  class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 flex items-center justify-center transition active:scale-95" 
+                  title="แก้ไข"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button 
+                  type="button"
+                  onclick="openDeleteModal('${tx.id}', '${escapeHtml(tx.memo)}', ${tx.amount})" 
+                  class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition active:scale-95" 
+                  title="ลบ"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const amountVal = document.getElementById('amount').value;
+      const memoVal = document.getElementById('memo').value;
+      const dateVal = document.getElementById('date').value;
+      const typeVal = document.getElementById('type').value;
+
+      const formData = {
+        amount: amountVal,
+        memo: memoVal,
+        date: dateVal,
+        type: typeVal
+      };
+
+      document.getElementById('amount').value = '';
+      document.getElementById('memo').value = '';
+
+      const tempId = 'TXN-' + Date.now();
+      const newTx = {
+        id: tempId,
+        date: dateVal,
+        memo: memoVal,
+        amount: parseFloat(amountVal),
+        type: typeVal
+      };
+
+      cachedTransactions.unshift(newTx);
+      renderTransactions(cachedTransactions);
+      recalculateSummary();
+      showToast('บันทึกเรียบร้อย');
+
+      callBackend('add', formData)
+        .then((res) => {
+          if (res && res.transactions) {
+            cachedTransactions = res.transactions;
+            onDataLoaded(res);
+          }
+        })
+        .catch((err) => {
+          showToast('บันทึกไม่สำเร็จ: ' + err.message, '⚠️');
+          loadData(false);
+        });
+    }
+
+    function openEditModal(id) {
+      const tx = cachedTransactions.find(t => String(t.id) === String(id));
+      if (!tx) return;
+
+      document.getElementById('edit-id').value = tx.id;
+      document.getElementById('edit-amount').value = tx.amount;
+      document.getElementById('edit-memo').value = tx.memo;
+      document.getElementById('edit-date').value = tx.date;
+      document.getElementById('edit-type').value = tx.type;
+
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    function handleEditSubmit(e) {
+      e.preventDefault();
+
+      const formData = {
+        id: document.getElementById('edit-id').value,
+        amount: document.getElementById('edit-amount').value,
+        memo: document.getElementById('edit-memo').value,
+        date: document.getElementById('edit-date').value,
+        type: document.getElementById('edit-type').value
+      };
+
+      closeEditModal();
+
+      const idx = cachedTransactions.findIndex(t => String(t.id) === String(formData.id));
+      if (idx !== -1) {
+        cachedTransactions[idx] = {
+          ...cachedTransactions[idx],
+          amount: parseFloat(formData.amount),
+          memo: formData.memo,
+          date: formData.date,
+          type: formData.type
+        };
+        renderTransactions(cachedTransactions);
+        recalculateSummary();
+        showToast('แก้ไขข้อมูลเรียบร้อยแล้ว');
+      }
+
+      callBackend('update', formData)
+        .then((res) => {
+          if (res) onDataLoaded(res);
+        })
+        .catch((err) => {
+          showToast('แก้ไขไม่สำเร็จ: ' + err.message, '⚠️');
+          loadData(false);
+        });
+    }
+
+    function openDeleteModal(id, memo, amount) {
+      deleteTargetId = id;
+      document.getElementById('delete-info').textContent = `"${memo || 'ไม่มี Memo'}" จำนวน ${formatCurrency(amount)}`;
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      deleteTargetId = null;
+      document.getElementById('delete-modal').classList.add('hidden');
+    }
+
+    function executeDelete() {
+      if (!deleteTargetId) return;
+      const targetId = deleteTargetId;
+      closeDeleteModal();
+
+      cachedTransactions = cachedTransactions.filter(t => String(t.id) !== String(targetId));
+      renderTransactions(cachedTransactions);
+      recalculateSummary();
+      showToast('ลบรายการเรียบร้อยแล้ว', '🗑️');
+
+      callBackend('delete', targetId)
+        .then((res) => {
+          if (res) onDataLoaded(res);
+        })
+        .catch((err) => {
+          showToast('ลบไม่สำเร็จ: ' + err.message, '⚠️');
+          loadData(false);
+        });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
