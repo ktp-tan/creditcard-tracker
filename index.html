@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Credit Card Tracker</title>
   
+  <!-- Force Light Scheme for crisp white inputs on all browsers -->
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  
   <!-- PWA Meta Tags for Standalone Mobile App -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,6 +37,10 @@
     }
   </script>
   <style>
+    :root {
+      color-scheme: light;
+      supported-color-schemes: light;
+    }
     body {
       -webkit-tap-highlight-color: transparent;
       user-select: none;
@@ -42,19 +50,26 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    /* บังคับให้ช่องกรอกเป็นพื้นหลังสีขาวสว่าง ชัดเจน ไม่มืดตาม Dark Mode */
-    .bright-input {
+    /* บังคับช่องกรอกให้เป็นสีขาวสว่าง 100% คมชัด ตัดกับทุกโหมด */
+    .bright-white-input {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      -webkit-text-fill-color: #0f172a !important;
+      color-scheme: light !important;
+      border: 2px solid #cbd5e1 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+    }
+    .bright-white-input:focus {
+      border-color: #4f46e5 !important;
       background-color: #ffffff !important;
       color: #0f172a !important;
-      border: 1.5px solid #cbd5e1 !important;
+      -webkit-text-fill-color: #0f172a !important;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
     }
-    .bright-input:focus {
-      border-color: #6366f1 !important;
-      background-color: #ffffff !important;
-      color: #0f172a !important;
-    }
-    .bright-input::placeholder {
+    .bright-white-input::placeholder {
       color: #94a3b8 !important;
+      -webkit-text-fill-color: #94a3b8 !important;
     }
   </style>
 </head>
@@ -80,65 +95,57 @@
 
   <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
 
-    <!-- Section 1: Dashboard Cards (ออกแบบให้ Balance สวยงาม มีมิติ) -->
-    <section class="space-y-2.5">
+    <!-- Section 1: Billing Cycles Summary Cards (แบบเดิมที่กะทัดรัดและลงตัวที่สุด) -->
+    <section class="space-y-2">
       
-      <!-- 1.1 รอบก่อนหน้า: Balance ดีไซน์ 3 ส่วนสมดุล ไม่แออัด -->
-      <div class="bg-white rounded-xl px-3.5 py-2.5 shadow-xs border border-slate-200 flex items-center justify-between">
+      <!-- 1.1 รอบก่อนหน้า: แถวเดียว กะทัดรัด ไม่กินที่ -->
+      <div class="bg-white rounded-xl px-3 py-2 shadow-xs border border-slate-200/90 flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 whitespace-nowrap">รอบก่อน</span>
-          <span id="prev-range" class="text-xs text-slate-400 font-mono">กำลังโหลด...</span>
+          <span id="prev-range" class="text-[11px] text-slate-400 font-mono truncate">กำลังโหลด...</span>
         </div>
-
-        <div class="flex items-center gap-3 shrink-0">
-          <div class="text-right">
-            <span class="text-[10px] text-slate-400 block -mb-0.5">ยอดรวม</span>
-            <span id="prev-total" class="font-bold text-slate-800 text-sm tabular-nums">฿0</span>
+        <div class="flex items-center gap-2.5 shrink-0">
+          <div class="flex items-baseline gap-1">
+            <span class="text-[10px] text-slate-400">รวม</span>
+            <span id="prev-total" class="font-bold text-slate-800 text-xs sm:text-sm tabular-nums">฿0</span>
           </div>
-          <div class="h-6 w-px bg-slate-200"></div>
-          <div class="flex items-center gap-2 text-xs">
-            <div class="text-center px-1.5 py-0.5 rounded bg-blue-50">
-              <span class="text-[10px] text-blue-600 block">👤</span>
-              <span id="prev-personal" class="font-semibold text-blue-800 tabular-nums">฿0</span>
-            </div>
-            <div class="text-center px-1.5 py-0.5 rounded bg-purple-50">
-              <span class="text-[10px] text-purple-600 block">👥</span>
-              <span id="prev-sharing" class="font-semibold text-purple-800 tabular-nums">฿0</span>
-            </div>
+          <div class="h-3.5 w-px bg-slate-200"></div>
+          <div class="flex items-center gap-2 text-[11px]">
+            <span class="text-blue-600 font-medium">👤 <span id="prev-personal" class="tabular-nums">฿0</span></span>
+            <span class="text-purple-600 font-medium">👥 <span id="prev-sharing" class="tabular-nums">฿0</span></span>
           </div>
         </div>
       </div>
 
-      <!-- 1.2 รอบปัจจุบัน: Hero Card ดีไซน์ใหม่ สมดุล ซ้าย-ขวา ชัดเจน -->
-      <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-3.5 shadow-md border border-slate-800">
-        <div class="flex items-center justify-between pb-2 border-b border-white/10">
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500 text-slate-950 uppercase tracking-wider">รอบปัจจุบัน</span>
+      <!-- 1.2 รอบปัจจุบัน: ยอดรวมตัวเลขใหญ่เท่าเดิม ประหยัดพื้นที่ลง 50% -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-3 shadow-md border border-slate-800">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500 text-slate-950">รอบปัจจุบัน</span>
             <span id="cur-range" class="text-xs text-slate-300 font-mono">กำลังโหลด...</span>
           </div>
-          <span class="inline-flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
+          <span class="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> กำลังสะสม
           </span>
         </div>
 
-        <!-- รายละเอียดตัวเลข: จัดวางแบบ Balance เต็มแถว -->
-        <div class="grid grid-cols-5 gap-2 items-center pt-2.5">
-          <!-- ฝั่งซ้าย: ยอดรวมรอบนี้ (3 ส่วน) -->
-          <div class="col-span-3">
-            <span class="text-[11px] text-slate-400 block mb-0.5">ยอดรวมรอบนี้</span>
-            <span class="text-3xl font-black tracking-tight text-white tabular-nums block" id="cur-total">฿0</span>
+        <div class="flex items-center justify-between gap-2 pt-0.5">
+          <!-- ฝั่งซ้าย: ยอดรวม ตัวเลขใหญ่สะใจเท่าเดิม -->
+          <div class="min-w-0">
+            <span class="text-[10px] text-slate-400 block -mb-1">ยอดรวมรอบนี้</span>
+            <span class="text-3xl font-black tracking-tight text-white tabular-nums truncate block" id="cur-total">฿0</span>
           </div>
 
-          <!-- ฝั่งขวา: แยกประเภท Personal & Sharing (2 ส่วน) -->
-          <div class="col-span-2 space-y-1 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/10">
+          <!-- ฝั่งขวา: แยก Personal & Sharing กะทัดรัดประกบข้าง -->
+          <div class="flex flex-col gap-1 shrink-0 bg-white/10 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 min-w-[120px]">
             <div class="flex items-center justify-between text-xs">
-              <span class="text-blue-300 text-[11px] flex items-center gap-1">👤 เดี่ยว</span>
-              <span class="font-bold text-white text-xs tabular-nums" id="cur-personal">฿0</span>
+              <span class="text-blue-300 text-[10px] font-medium flex items-center gap-0.5">👤 เดี่ยว</span>
+              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-personal">฿0</span>
             </div>
             <div class="h-px bg-white/10"></div>
             <div class="flex items-center justify-between text-xs">
-              <span class="text-purple-300 text-[11px] flex items-center gap-1">👥 หาร</span>
-              <span class="font-bold text-white text-xs tabular-nums" id="cur-sharing">฿0</span>
+              <span class="text-purple-300 text-[10px] font-medium flex items-center gap-0.5">👥 หาร</span>
+              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-sharing">฿0</span>
             </div>
           </div>
         </div>
@@ -146,18 +153,18 @@
 
     </section>
 
-    <!-- Section 2: Form บันทึกรายการใหม่ (พื้นหลังช่องกรอกสีขาวสว่าง สบายตา) -->
-    <section class="bg-white rounded-2xl p-4 shadow-xs border border-slate-200">
-      <h2 class="text-xs font-semibold text-slate-800 mb-3 flex items-center gap-1.5">
+    <!-- Section 2: Form บันทึกรายการใหม่ (ช่องกรอกสีขาวสว่าง สบายตา เห็นชัดเจน) -->
+    <section class="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-200">
+      <h2 class="text-xs font-semibold text-slate-800 mb-2.5 flex items-center gap-1.5">
         <span>📝 บันทึกรายการใช้จ่าย</span>
       </h2>
 
-      <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-3">
-        <!-- ยอดเงิน: พื้นหลังขาวสว่าง ชัดเจน -->
+      <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-2.5">
+        <!-- ยอดเงิน: สีขาวสว่าง 100% คมชัด -->
         <div>
-          <label class="block text-[11px] font-medium text-slate-600 mb-1">ยอดเงิน (บาท)</label>
+          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ยอดเงิน (บาท)</label>
           <div class="relative">
-            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">฿</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-base z-10">฿</span>
             <input 
               type="number" 
               step="0.01" 
@@ -165,43 +172,43 @@
               required 
               id="amount" 
               placeholder="0.00" 
-              class="bright-input w-full pl-9 pr-3.5 py-2.5 text-lg font-bold rounded-xl shadow-xs focus:outline-none transition"
+              class="bright-white-input w-full pl-8 pr-3 py-2 text-base font-bold rounded-xl focus:outline-none transition"
             >
           </div>
         </div>
 
-        <!-- Memo บันทึกช่วยจำ: พื้นหลังขาวสว่าง ชัดเจน -->
+        <!-- Memo บันทึกช่วยจำ: สีขาวสว่าง 100% คมชัด -->
         <div>
-          <label class="block text-[11px] font-medium text-slate-600 mb-1">รายการ / Memo</label>
+          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">รายการ / Memo</label>
           <input 
             type="text" 
             required 
             id="memo" 
             placeholder="เช่น ข้าวกลางวัน, Netflix, ช้อปปิ้ง" 
-            class="bright-input w-full px-3.5 py-2 text-sm rounded-xl shadow-xs focus:outline-none transition"
+            class="bright-white-input w-full px-3 py-2 text-xs sm:text-sm rounded-xl focus:outline-none transition"
           >
         </div>
 
-        <!-- วันที่ & ประเภท: จัดสัดส่วนสมดุล 50/50 -->
-        <div class="grid grid-cols-2 gap-2.5 pt-0.5">
+        <!-- วันที่ & ประเภท -->
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[11px] font-medium text-slate-600 mb-1">วันที่ทำรายการ</label>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">วันที่ทำรายการ</label>
             <input 
               type="date" 
               required 
               id="date" 
-              class="bright-input w-full px-3 py-2 text-xs rounded-xl shadow-xs focus:outline-none transition font-medium"
+              class="bright-white-input w-full px-2.5 py-1.5 text-xs rounded-xl focus:outline-none transition font-medium"
             >
           </div>
 
           <div>
-            <label class="block text-[11px] font-medium text-slate-600 mb-1">ประเภท</label>
-            <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ประเภท</label>
+            <div class="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
               <button 
                 type="button" 
                 id="btn-type-personal" 
                 onclick="setType('Personal')"
-                class="py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition"
+                class="py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition"
               >
                 👤 เดี่ยว
               </button>
@@ -209,7 +216,7 @@
                 type="button" 
                 id="btn-type-sharing" 
                 onclick="setType('Sharing')"
-                class="py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition"
+                class="py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition"
               >
                 👥 หาร
               </button>
@@ -222,7 +229,7 @@
         <button 
           type="submit" 
           id="btn-submit"
-          class="w-full mt-2 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-[0.98] text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2"
+          class="w-full mt-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-medium text-xs sm:text-sm rounded-xl shadow transition flex items-center justify-center gap-1.5"
         >
           <span>➕ บันทึกข้อมูล</span>
         </button>
@@ -264,7 +271,7 @@
             inputmode="decimal" 
             required 
             id="edit-amount" 
-            class="bright-input w-full px-3 py-2 text-base font-bold rounded-xl focus:outline-none"
+            class="bright-white-input w-full px-3 py-2 text-base font-bold rounded-xl focus:outline-none"
           >
         </div>
 
@@ -274,7 +281,7 @@
             type="text" 
             required 
             id="edit-memo" 
-            class="bright-input w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+            class="bright-white-input w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
           >
         </div>
 
@@ -285,12 +292,12 @@
               type="date" 
               required 
               id="edit-date" 
-              class="bright-input w-full px-2 py-2 text-xs rounded-xl focus:outline-none"
+              class="bright-white-input w-full px-2 py-2 text-xs rounded-xl focus:outline-none"
             >
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">ประเภท</label>
-            <select id="edit-type" class="bright-input w-full px-2 py-2 text-xs rounded-xl focus:outline-none">
+            <select id="edit-type" class="bright-white-input w-full px-2 py-2 text-xs rounded-xl focus:outline-none">
               <option value="Personal">👤 Personal (เดี่ยว)</option>
               <option value="Sharing">👥 Sharing (หาร)</option>
             </select>
@@ -489,11 +496,11 @@
       const btnSharing = document.getElementById('btn-type-sharing');
 
       if (type === 'Personal') {
-        btnPersonal.className = 'py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition';
-        btnSharing.className = 'py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
+        btnPersonal.className = 'py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition';
+        btnSharing.className = 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
       } else {
-        btnPersonal.className = 'py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
-        btnSharing.className = 'py-1.5 text-xs font-semibold rounded-lg bg-purple-600 text-white shadow-xs transition';
+        btnPersonal.className = 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
+        btnSharing.className = 'py-1 text-xs font-semibold rounded-lg bg-purple-600 text-white shadow-xs transition';
       }
     }
 
