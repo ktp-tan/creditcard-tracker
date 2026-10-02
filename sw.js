@@ -1,9 +1,10 @@
-// Service Worker for Credit Card Tracker PWA
-const CACHE_NAME = 'cc-tracker-v1';
+// Service Worker for Credit Card Tracker PWA v2
+const CACHE_NAME = 'cc-tracker-v2';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-v2.png'
 ];
 
 self.addEventListener('install', (e) => {
@@ -27,7 +28,6 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Pass Google Apps Script API calls directly to the network
   if (e.request.url.includes('script.google.com') || e.request.url.includes('googleusercontent.com')) {
     return;
   }
