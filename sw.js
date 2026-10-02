@@ -1,5 +1,5 @@
-// Service Worker for Credit Card Tracker PWA v3
-const CACHE_NAME = 'cc-tracker-v3';
+// Service Worker for Credit Card Tracker PWA v4 (Network-First Strategy)
+const CACHE_NAME = 'cc-tracker-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -8,10 +8,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -22,19 +22,27 @@ self.addEventListener('activate', (e) => {
           if (k !== CACHE_NAME) return caches.delete(k);
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// Network-First: Always try to get the newest version from the server first!
 self.addEventListener('fetch', (e) => {
   if (e.request.url.includes('script.google.com') || e.request.url.includes('googleusercontent.com')) {
     return;
   }
 
   e.respondWith(
-    caches.match(e.request).then((res) => {
-      return res || fetch(e.request);
-    })
+    fetch(e.request)
+      .then((networkRes) => {
+        if (networkRes && networkRes.status === 200) {
+          const resClone = networkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
+        }
+        return networkRes;
+      })
+      .catch(() => {
+        return caches.match(e.request);
+      })
   );
 });

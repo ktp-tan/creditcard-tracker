@@ -2,7 +2,7 @@
   "name": "Credit Card Tracker",
   "short_name": "CC Tracker",
   "description": "ระบบบันทึกและจัดการค่าใช้จ่ายบัตรเครดิต ตัดรอบทุกวันที่ 5",
-  "id": "/creditcard-tracker-v3",
+  "id": "/creditcard-tracker-v4",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

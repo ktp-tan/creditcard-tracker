@@ -172,7 +172,8 @@
               required 
               id="amount" 
               placeholder="0.00" 
-              class="bright-white-input w-full pl-8 pr-3 py-2 text-base font-bold rounded-xl focus:outline-none transition"
+              style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
+              class="w-full pl-8 pr-3 py-2 text-base font-bold rounded-xl focus:outline-none transition shadow-sm"
             >
           </div>
         </div>
@@ -185,7 +186,8 @@
             required 
             id="memo" 
             placeholder="เช่น ข้าวกลางวัน, Netflix, ช้อปปิ้ง" 
-            class="bright-white-input w-full px-3 py-2 text-xs sm:text-sm rounded-xl focus:outline-none transition"
+            style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
+            class="w-full px-3 py-2 text-xs sm:text-sm rounded-xl focus:outline-none transition shadow-sm"
           >
         </div>
 
@@ -197,7 +199,8 @@
               type="date" 
               required 
               id="date" 
-              class="bright-white-input w-full px-2.5 py-1.5 text-xs rounded-xl focus:outline-none transition font-medium"
+              style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
+              class="w-full px-2.5 py-1.5 text-xs rounded-xl focus:outline-none transition font-medium shadow-sm"
             >
           </div>
 
@@ -271,7 +274,8 @@
             inputmode="decimal" 
             required 
             id="edit-amount" 
-            class="bright-white-input w-full px-3 py-2 text-base font-bold rounded-xl focus:outline-none"
+            style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
+            class="w-full px-3 py-2 text-base font-bold rounded-xl focus:outline-none shadow-sm"
           >
         </div>
 
@@ -281,7 +285,8 @@
             type="text" 
             required 
             id="edit-memo" 
-            class="bright-white-input w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+            style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
+            class="w-full px-3 py-2 text-sm rounded-xl focus:outline-none shadow-sm"
           >
         </div>
 
@@ -292,12 +297,13 @@
               type="date" 
               required 
               id="edit-date" 
-              class="bright-white-input w-full px-2 py-2 text-xs rounded-xl focus:outline-none"
+              style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
+              class="w-full px-2 py-2 text-xs rounded-xl focus:outline-none shadow-sm font-medium"
             >
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">ประเภท</label>
-            <select id="edit-type" class="bright-white-input w-full px-2 py-2 text-xs rounded-xl focus:outline-none">
+            <select id="edit-type" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full px-2 py-2 text-xs rounded-xl focus:outline-none shadow-sm font-medium">
               <option value="Personal">👤 Personal (เดี่ยว)</option>
               <option value="Sharing">👥 Sharing (หาร)</option>
             </select>
@@ -368,7 +374,9 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js?v=4').then(reg => {
+          reg.update();
+        }).catch(() => {});
       });
     }
 
