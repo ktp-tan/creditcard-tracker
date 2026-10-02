@@ -239,10 +239,13 @@
       </form>
     </section>
 
-    <!-- Section 3: รายการทั้งหมด (Recent Transactions) -->
+    <!-- Section 3: รายการใช้จ่าย (60 วันล่าสุด) -->
     <section class="space-y-2">
       <div class="flex items-center justify-between px-1">
-        <h2 class="text-xs font-semibold text-slate-800">🕒 รายการทั้งหมด</h2>
+        <h2 class="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+          <span>🕒 รายการล่าสุด</span>
+          <span class="text-[10px] text-slate-400 font-normal">(60 วันล่าสุด)</span>
+        </h2>
         <span id="tx-count" class="text-[11px] text-slate-400">0 รายการ</span>
       </div>
 
@@ -251,6 +254,10 @@
           กำลังโหลดรายการ...
         </div>
       </div>
+
+      <p class="text-[10px] text-slate-400 text-center pt-1">
+        ☁️ ข้อมูลย้อนหลังทั้งหมดถูกบันทึกไว้อย่างปลอดภัยใน Google Sheet
+      </p>
     </section>
 
   </main>
