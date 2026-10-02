@@ -547,6 +547,13 @@
       renderTransactions(cachedTransactions);
     }
 
+    let isExpandedAll = false;
+
+    function toggleExpandTransactions() {
+      isExpandedAll = !isExpandedAll;
+      renderTransactions(cachedTransactions);
+    }
+
     function renderTransactions(list) {
       const container = document.getElementById('tx-list');
       const countEl = document.getElementById('tx-count');
@@ -562,7 +569,10 @@
         return;
       }
 
-      container.innerHTML = list.map(tx => {
+      // แสดงเฉพาะ 2 รายการล่าสุดตามค่าเริ่มต้น เพื่อความลื่นไหลและไม่หน่วง
+      const displayList = isExpandedAll ? list : list.slice(0, 2);
+
+      let html = displayList.map(tx => {
         const isSharing = String(tx.type).toLowerCase() === 'sharing';
         const badgeColor = isSharing ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
         const badgeText = isSharing ? '👥 Sharing' : '👤 Personal';
@@ -613,6 +623,21 @@
           </div>
         `;
       }).join('');
+
+      // ถ้ามีมากกว่า 2 รายการ ให้แสดงปุ่มกดดูทั้งหมด / ย่อลง
+      if (list.length > 2) {
+        html += `
+          <button 
+            type="button" 
+            onclick="toggleExpandTransactions()" 
+            class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 active:scale-[0.99] border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 shadow-xs flex items-center justify-center gap-1.5 transition mt-1"
+          >
+            <span>${isExpandedAll ? '▲ ย่อลง (แสดง 2 รายการล่าสุด)' : `▼ ดูรายการทั้งหมด (${list.length} รายการ)`}</span>
+          </button>
+        `;
+      }
+
+      container.innerHTML = html;
     }
 
     function handleFormSubmit(e) {
