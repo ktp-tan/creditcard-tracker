@@ -81,7 +81,7 @@
       <img src="./icon-v3.png" alt="App Icon" class="w-7 h-7 rounded-lg shadow-sm object-cover">
       <div>
         <h1 class="text-sm font-semibold tracking-wide">Credit Card Tracker</h1>
-        <p class="text-[10px] text-slate-400">ตัดรอบทุกวันที่ 5</p>
+        <p class="text-[10px] text-slate-400">ตัดรอบทุกวันที่ 6 (6 - 5 เดือนถัดไป)</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -421,7 +421,7 @@
       const previous = calcBillingCycle(prevDate);
 
       const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      const formatRange = (c) => `5 ${thaiMonths[c.start.getMonth()]} - 4 ${thaiMonths[c.end.getMonth()]}`;
+      const formatRange = (c) => `6 ${thaiMonths[c.start.getMonth()]} - 5 ${thaiMonths[c.end.getMonth()]}`;
 
       cycleDates = {
         current: {
@@ -447,7 +447,7 @@
       const day = d.getDate();
 
       let sY = y, sM = m, eY = y, eM = m + 1;
-      if (day < 5) {
+      if (day < 6) {
         sM = m - 1;
         eM = m;
         if (sM < 0) { sM = 11; sY = y - 1; }
@@ -455,8 +455,8 @@
         if (eM > 11) { eM = 0; eY = y + 1; }
       }
       return {
-        start: new Date(sY, sM, 5, 0, 0, 0, 0),
-        end: new Date(eY, eM, 4, 23, 59, 59, 999)
+        start: new Date(sY, sM, 6, 0, 0, 0, 0),
+        end: new Date(eY, eM, 5, 23, 59, 59, 999)
       };
     }
 

@@ -92,8 +92,8 @@ function getBillingCycle(dateObj) {
   let endYear = year;
   let endMonth = month + 1;
 
-  if (day < 5) {
-    // ถ้าวันที่ < 5 แสดงว่ายังอยู่ในรอบของเดือนก่อน
+  if (day < 6) {
+    // ถ้าวันที่ < 6 (1-5) แสดงว่ายังอยู่ในรอบที่เริ่มวันที่ 6 ของเดือนก่อน ถึงวันที่ 5 เดือนนี้
     startMonth = month - 1;
     endMonth = month;
     if (startMonth < 0) {
@@ -101,15 +101,15 @@ function getBillingCycle(dateObj) {
       startYear = year - 1;
     }
   } else {
-    // วันที่ >= 5 อยู่ในรอบเดือนนี้
+    // วันที่ >= 6 อยู่ในรอบที่เริ่มวันที่ 6 เดือนนี้ ถึงวันที่ 5 เดือนถัดไป
     if (endMonth > 11) {
       endMonth = 0;
       endYear = year + 1;
     }
   }
 
-  const startDate = new Date(startYear, startMonth, 5, 0, 0, 0, 0);
-  const endDate = new Date(endYear, endMonth, 4, 23, 59, 59, 999);
+  const startDate = new Date(startYear, startMonth, 6, 0, 0, 0, 0);
+  const endDate = new Date(endYear, endMonth, 5, 23, 59, 59, 999);
 
   return {
     start: startDate,
@@ -203,7 +203,7 @@ function getInitialData() {
   const formatCycleRange = (cycle) => {
     const s = cycle.start;
     const e = cycle.end;
-    return `5 ${thaiMonths[s.getMonth()]} - 4 ${thaiMonths[e.getMonth()]}`;
+    return `6 ${thaiMonths[s.getMonth()]} - 5 ${thaiMonths[e.getMonth()]}`;
   };
 
   return {
