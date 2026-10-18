@@ -178,17 +178,22 @@
           </div>
         </div>
 
-        <!-- Memo บันทึกช่วยจำ: สีขาวสว่าง 100% คมชัด -->
+        <!-- Memo บันทึกช่วยจำ: สีขาวสว่าง 100% คมชัด + ปุ่มลัด 3 รายการยอดฮิต -->
         <div>
-          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">รายการ / Memo</label>
+          <div class="flex items-center justify-between mb-0.5">
+            <label class="block text-[11px] font-medium text-slate-600">รายการ / Memo</label>
+            <span class="text-[10px] text-slate-400">⚡ กดเลือกด่วน (ใช้บ่อยสุด)</span>
+          </div>
           <input 
             type="text" 
             required 
             id="memo" 
-            placeholder="เช่น ข้าวกลางวัน, Netflix, ช้อปปิ้ง" 
+            placeholder="เช่น ข้าวกลางวัน, กาแฟ, Netflix" 
             style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
             class="w-full px-3 py-2 text-xs sm:text-sm rounded-xl focus:outline-none transition shadow-sm"
           >
+          <!-- Quick Memo Chips (3 รายการที่ใช้บ่อยที่สุด) -->
+          <div id="memo-chips" class="flex flex-wrap items-center gap-1.5 mt-1.5 min-h-[26px]"></div>
         </div>
 
         <!-- วันที่ & ประเภท -->
@@ -381,7 +386,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=4').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=5').then(reg => {
           reg.update();
         }).catch(() => {});
       });
@@ -391,6 +396,7 @@
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('date').value = today;
       initCycleDates();
+      updateMemoChips();
       loadData(false);
     });
 
@@ -538,6 +544,73 @@
         });
     }
 
+    function selectMemoChip(val) {
+      const memoInput = document.getElementById('memo');
+      if (memoInput) {
+        memoInput.value = val;
+        // Effect แฟลชสีขอบเพื่อบอกว่าเลือกแล้ว
+        memoInput.style.borderColor = '#4f46e5';
+        setTimeout(() => {
+          memoInput.style.borderColor = '#94a3b8';
+        }, 350);
+      }
+    }
+
+    function updateMemoChips() {
+      const container = document.getElementById('memo-chips');
+      if (!container) return;
+
+      const freq = {};
+      (cachedTransactions || []).forEach(tx => {
+        const m = (tx.memo || '').trim();
+        if (m) {
+          freq[m] = (freq[m] || 0) + 1;
+        }
+      });
+
+      // จัดลำดับ memo ตามจำนวนครั้งที่ใช้มากที่สุดไปหาน้อยที่สุด
+      const sortedMemos = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+
+      // รายการเริ่มต้นกรณีประวัติยังน้อยกว่า 3 อัน
+      const fallbacks = ['ข้าวกลางวัน', 'กาแฟ', 'ค่าน้ำมัน'];
+      const topMemos = [];
+
+      for (let m of sortedMemos) {
+        if (topMemos.length < 3) {
+          topMemos.push(m);
+        }
+      }
+
+      for (let fb of fallbacks) {
+        if (topMemos.length < 3 && !topMemos.includes(fb)) {
+          topMemos.push(fb);
+        }
+      }
+
+      if (topMemos.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = topMemos.map(memo => {
+        const count = freq[memo] || 0;
+        const countBadge = count > 1 ? `<span class="text-[9px] text-slate-500 bg-slate-200/80 px-1 py-0.2 rounded-full ml-0.5">${count}</span>` : '';
+        return `
+          <button 
+            type="button" 
+            onclick="selectMemoChip('${escapeHtml(memo).replace(/'/g, "\\'")}')" 
+            style="background-color: #f1f5f9 !important; color: #1e293b !important; color-scheme: light !important;"
+            class="px-2.5 py-1 text-[11px] font-medium rounded-lg border border-slate-300 hover:border-indigo-500 hover:bg-indigo-50 active:scale-95 transition shadow-xs flex items-center gap-1 shrink-0 cursor-pointer"
+            title="แตะเพื่อใส่ '${escapeHtml(memo)}' ลงในช่องบันทึก"
+          >
+            <span class="text-indigo-600 font-bold">⚡</span>
+            <span class="truncate max-w-[120px]">${escapeHtml(memo)}</span>
+            ${countBadge}
+          </button>
+        `;
+      }).join('');
+    }
+
     function onDataLoaded(data) {
       if (!data) return;
       document.getElementById('prev-range').textContent = data.previousCycle.dateRange;
@@ -552,6 +625,7 @@
 
       cachedTransactions = data.transactions || [];
       renderTransactions(cachedTransactions);
+      updateMemoChips();
     }
 
     let isExpandedAll = false;
@@ -676,6 +750,7 @@
 
       cachedTransactions.unshift(newTx);
       renderTransactions(cachedTransactions);
+      updateMemoChips();
       recalculateSummary();
       showToast('บันทึกเรียบร้อย');
 
@@ -732,6 +807,7 @@
           type: formData.type
         };
         renderTransactions(cachedTransactions);
+        updateMemoChips();
         recalculateSummary();
         showToast('แก้ไขข้อมูลเรียบร้อยแล้ว');
       }
@@ -764,6 +840,7 @@
 
       cachedTransactions = cachedTransactions.filter(t => String(t.id) !== String(targetId));
       renderTransactions(cachedTransactions);
+      updateMemoChips();
       recalculateSummary();
       showToast('ลบรายการเรียบร้อยแล้ว', '🗑️');
 

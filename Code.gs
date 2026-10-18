@@ -131,6 +131,7 @@ function getInitialData() {
 
   // คำนวณรอบก่อนหน้า โดยลบจากวันเริ่มต้นของรอบปัจจุบันไป 1 วัน
   const prevDate = new Date(currentCycle.start.getTime() - (24 * 60 * 60 * 1000));
+  const previousCycle = getBillingCycle(prevDate);
   // กำหนดช่วงเวลาย้อนหลัง 60 วัน (ครอบคลุมทั้งรอบปัจจุบันและรอบก่อนหน้า)
   const sixtyDaysAgoMs = now.getTime() - (60 * 24 * 60 * 60 * 1000);
   const cutoffMs = Math.min(sixtyDaysAgoMs, previousCycle.start.getTime());
