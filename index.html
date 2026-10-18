@@ -386,7 +386,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=6').then(reg => {
+        navigator.serviceWorker.register('./sw.js?v=7').then(reg => {
           reg.update();
         }).catch(() => {});
       });
@@ -611,6 +611,34 @@
       }).join('');
     }
 
+    function sortTransactions(list) {
+      if (!list || !Array.isArray(list)) return [];
+      return [...list].sort((a, b) => {
+        // เทียบวันที่ก่อน (เช่น 2026-10-18 vs 2026-10-17)
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        if (dateB !== dateA) {
+          return dateB - dateA;
+        }
+
+        // หากวันเดียวกัน รายการที่บันทึกล่าสุดให้อยู่บนสุด
+        const getCreatedScore = (item) => {
+          if (item.createdTime) return Number(item.createdTime);
+          if (item.createdAt) {
+            const t = new Date(item.createdAt).getTime();
+            if (!isNaN(t) && t > 0) return t;
+          }
+          if (item.id) {
+            const m = String(item.id).match(/\d+/);
+            if (m) return parseInt(m[0], 10);
+          }
+          return 0;
+        };
+
+        return getCreatedScore(b) - getCreatedScore(a);
+      });
+    }
+
     function onDataLoaded(data) {
       if (!data) return;
       document.getElementById('prev-range').textContent = data.previousCycle.dateRange;
@@ -623,7 +651,7 @@
       document.getElementById('cur-personal').textContent = formatCurrency(data.currentCycle.personal);
       document.getElementById('cur-sharing').textContent = formatCurrency(data.currentCycle.sharing);
 
-      cachedTransactions = data.transactions || [];
+      cachedTransactions = sortTransactions(data.transactions || []);
       renderTransactions(cachedTransactions);
       updateMemoChips();
     }
@@ -739,16 +767,20 @@
       document.getElementById('amount').value = '';
       document.getElementById('memo').value = '';
 
-      const tempId = 'TXN-' + Date.now();
+      const nowMs = Date.now();
+      const tempId = 'TXN-' + nowMs;
       const newTx = {
         id: tempId,
         date: dateVal,
         memo: memoVal,
         amount: parseFloat(amountVal),
-        type: typeVal
+        type: typeVal,
+        createdAt: new Date().toISOString(),
+        createdTime: nowMs
       };
 
       cachedTransactions.unshift(newTx);
+      cachedTransactions = sortTransactions(cachedTransactions);
       renderTransactions(cachedTransactions);
       updateMemoChips();
       recalculateSummary();
@@ -806,6 +838,7 @@
           date: formData.date,
           type: formData.type
         };
+        cachedTransactions = sortTransactions(cachedTransactions);
         renderTransactions(cachedTransactions);
         updateMemoChips();
         recalculateSummary();

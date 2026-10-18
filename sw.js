@@ -1,5 +1,5 @@
-// Service Worker for Credit Card Tracker PWA v6 (Network-First Strategy)
-const CACHE_NAME = 'cc-tracker-v6';
+// Service Worker for Credit Card Tracker PWA v7 (Network-First Strategy)
+const CACHE_NAME = 'cc-tracker-v7';
 const ASSETS = [
   './',
   './index.html',

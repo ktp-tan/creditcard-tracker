@@ -183,6 +183,20 @@ function getInitialData() {
       }
     }
 
+    let createdTime = 0;
+    if (row[5]) {
+      try {
+        createdTime = new Date(row[5]).getTime() || 0;
+      } catch (e) {}
+    }
+    if (!createdTime) {
+      const match = id.match(/\d+/);
+      if (match) createdTime = parseInt(match[0], 10);
+    }
+    if (!createdTime) {
+      createdTime = i;
+    }
+
     // ดึงเฉพาะ 60 วันล่าสุดเข้าแอป เพื่อความลื่นไหลและประหยัดเน็ต (ข้อมูลทั้งหมดยังอยู่ใน Sheet)
     if (txTime >= cutoffMs) {
       transactions.push({
@@ -192,13 +206,19 @@ function getInitialData() {
         amount: amount,
         type: type,
         createdAt: createdAt,
-        timestamp: txTime
+        timestamp: txTime,
+        createdTime: createdTime
       });
     }
   }
 
-  // เรียงรายการจากล่าสุดไปเก่าสุด
-  transactions.sort((a, b) => b.timestamp - a.timestamp);
+  // เรียงรายการจากล่าสุดไปเก่าสุด: วันที่ล่าสุดขึ้นก่อน หากวันเดียวกัน รายการที่บันทึกล่าสุดจะอยู่บนสุด
+  transactions.sort((a, b) => {
+    if (b.timestamp !== a.timestamp) {
+      return b.timestamp - a.timestamp;
+    }
+    return (b.createdTime || 0) - (a.createdTime || 0);
+  });
 
   const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
   const formatCycleRange = (cycle) => {
