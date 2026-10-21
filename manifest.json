@@ -1,7 +1,7 @@
 {
   "name": "Credit Card Tracker",
   "short_name": "CC Tracker",
-  "description": "ระบบบันทึกและจัดการค่าใช้จ่ายบัตรเครดิต ตัดรอบทุกวันที่ 5",
+  "description": "ระบบบันทึกและจัดการค่าใช้จ่ายบัตรเครดิต รอบบิลวันที่ 6 - 5 ของเดือนถัดไป",
   "id": "/creditcard-tracker-v4",
   "start_url": "./index.html",
   "scope": "./",

@@ -393,8 +393,21 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('date').value = today;
+      // ใช้วันที่ตามเวลาเครื่อง (toISOString เป็น UTC ทำให้ช่วง 00:00-06:59 ได้วันที่ของเมื่อวาน)
+      document.getElementById('date').value = toLocalDateStr(new Date());
+
+      // ใช้ data-* + event delegation แทน onclick เพื่อไม่ให้ memo ที่มี ' หรือ " ทำให้ปุ่มพัง
+      document.getElementById('memo-chips').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-memo]');
+        if (btn) selectMemoChip(btn.dataset.memo);
+      });
+      document.getElementById('tx-list').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        if (btn.dataset.action === 'edit') openEditModal(btn.dataset.id);
+        else if (btn.dataset.action === 'delete') openDeleteModal(btn.dataset.id);
+      });
+
       initCycleDates();
       updateMemoChips();
       loadData(false);
@@ -416,8 +429,35 @@
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: action, data: data, id: data })
-        }).then(res => res.json());
+        }).then(res => res.json())
+          .then(res => {
+            if (res && res.success === false) throw new Error(res.error || 'Server error');
+            return res;
+          });
       }
+    }
+
+    // คิวสำหรับคำสั่ง add/update/delete ให้ส่งไปเซิร์ฟเวอร์ทีละคำสั่งตามลำดับ
+    // กันกรณีแก้ไข/ลบรายการที่เพิ่งบันทึก แล้วคำสั่งไปถึงเซิร์ฟเวอร์ก่อนคำสั่ง add
+    let backendQueue = Promise.resolve();
+    let pendingMutations = 0;
+
+    function callMutation(action, data) {
+      pendingMutations++;
+      const p = backendQueue.then(() => callBackend(action, data));
+      backendQueue = p.catch(() => {});
+      return p.finally(() => { pendingMutations--; });
+    }
+
+    // อัปเดตหน้าจอด้วยข้อมูลจากเซิร์ฟเวอร์เฉพาะเมื่อไม่มีคำสั่งค้างในคิว
+    // ไม่งั้นรายการที่เพิ่งลบ/แก้ไข (optimistic) จะเด้งกลับมาชั่วคราว
+    function onMutationDone(res) {
+      if (res && pendingMutations === 0) onDataLoaded(res);
+    }
+
+    function toLocalDateStr(d) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
 
     function initCycleDates() {
@@ -598,7 +638,7 @@
         return `
           <button 
             type="button" 
-            onclick="selectMemoChip('${escapeHtml(memo).replace(/'/g, "\\'")}')" 
+            data-memo="${escapeHtml(memo)}"
             style="background-color: #f1f5f9 !important; color: #1e293b !important; color-scheme: light !important;"
             class="w-full py-1.5 px-1.5 text-[11px] sm:text-xs font-medium rounded-xl border border-slate-300 hover:border-indigo-500 hover:bg-indigo-50 active:scale-[0.98] transition shadow-xs flex items-center justify-center gap-1 cursor-pointer min-w-0"
             title="แตะเพื่อใส่ '${escapeHtml(memo)}' ลงในช่องบันทึก"
@@ -707,7 +747,8 @@
               <div class="flex items-center gap-1 border-l border-slate-200 pl-2">
                 <button 
                   type="button"
-                  onclick="openEditModal('${tx.id}')" 
+                  data-action="edit"
+                  data-id="${escapeHtml(tx.id)}"
                   class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 flex items-center justify-center transition active:scale-95" 
                   title="แก้ไข"
                 >
@@ -718,7 +759,8 @@
                 </button>
                 <button 
                   type="button"
-                  onclick="openDeleteModal('${tx.id}', '${escapeHtml(tx.memo)}', ${tx.amount})" 
+                  data-action="delete"
+                  data-id="${escapeHtml(tx.id)}"
                   class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition active:scale-95" 
                   title="ลบ"
                 >
@@ -757,7 +799,13 @@
       const dateVal = document.getElementById('date').value;
       const typeVal = document.getElementById('type').value;
 
+      // สร้าง ID ฝั่งเครื่องแล้วส่งให้เซิร์ฟเวอร์ใช้ ID เดียวกัน
+      // เพื่อให้แก้ไข/ลบรายการได้ทันทีโดยไม่ต้องรอ sync
+      const nowMs = Date.now();
+      const txId = 'TXN-' + nowMs;
+
       const formData = {
+        id: txId,
         amount: amountVal,
         memo: memoVal,
         date: dateVal,
@@ -767,10 +815,8 @@
       document.getElementById('amount').value = '';
       document.getElementById('memo').value = '';
 
-      const nowMs = Date.now();
-      const tempId = 'TXN-' + nowMs;
       const newTx = {
-        id: tempId,
+        id: txId,
         date: dateVal,
         memo: memoVal,
         amount: parseFloat(amountVal),
@@ -786,13 +832,8 @@
       recalculateSummary();
       showToast('บันทึกเรียบร้อย');
 
-      callBackend('add', formData)
-        .then((res) => {
-          if (res && res.transactions) {
-            cachedTransactions = res.transactions;
-            onDataLoaded(res);
-          }
-        })
+      callMutation('add', formData)
+        .then(onMutationDone)
         .catch((err) => {
           showToast('บันทึกไม่สำเร็จ: ' + err.message, '⚠️');
           loadData(false);
@@ -845,19 +886,20 @@
         showToast('แก้ไขข้อมูลเรียบร้อยแล้ว');
       }
 
-      callBackend('update', formData)
-        .then((res) => {
-          if (res) onDataLoaded(res);
-        })
+      callMutation('update', formData)
+        .then(onMutationDone)
         .catch((err) => {
           showToast('แก้ไขไม่สำเร็จ: ' + err.message, '⚠️');
           loadData(false);
         });
     }
 
-    function openDeleteModal(id, memo, amount) {
+    function openDeleteModal(id) {
+      const tx = cachedTransactions.find(t => String(t.id) === String(id));
+      if (!tx) return;
+
       deleteTargetId = id;
-      document.getElementById('delete-info').textContent = `"${memo || 'ไม่มี Memo'}" จำนวน ${formatCurrency(amount)}`;
+      document.getElementById('delete-info').textContent = `"${tx.memo || 'ไม่มี Memo'}" จำนวน ${formatCurrency(tx.amount)}`;
       document.getElementById('delete-modal').classList.remove('hidden');
     }
 
@@ -877,10 +919,8 @@
       recalculateSummary();
       showToast('ลบรายการเรียบร้อยแล้ว', '🗑️');
 
-      callBackend('delete', targetId)
-        .then((res) => {
-          if (res) onDataLoaded(res);
-        })
+      callMutation('delete', targetId)
+        .then(onMutationDone)
         .catch((err) => {
           showToast('ลบไม่สำเร็จ: ' + err.message, '⚠️');
           loadData(false);

@@ -1,6 +1,6 @@
 /**
  * Credit Card Expense Tracker - Google Apps Script
- * ระบบบันทึกและจัดการค่าใช้จ่ายบัตรเครดิต ตัดรอบทุกวันที่ 5
+ * ระบบบันทึกและจัดการค่าใช้จ่ายบัตรเครดิต รอบบิลวันที่ 6 ถึงวันที่ 5 ของเดือนถัดไป
  */
 
 const SHEET_NAME = 'Transactions';
@@ -77,7 +77,7 @@ function doPost(e) {
 }
 
 /**
- * คำนวณช่วงวันที่รอบบิล (ตัดรอบวันที่ 5 ถึง 4 ของเดือนถัดไป)
+ * คำนวณช่วงวันที่รอบบิล (เริ่มวันที่ 6 ถึงวันที่ 5 ของเดือนถัดไป)
  * @param {Date} dateObj
  * @returns {object} { cycleName, startDate, endDate }
  */
@@ -253,7 +253,9 @@ function getInitialData() {
 function addTransaction(formData) {
   const sheet = getSheet();
   const tz = Session.getScriptTimeZone();
-  const id = 'TXN-' + new Date().getTime();
+  // ใช้ ID ที่หน้าเว็บสร้างมา เพื่อให้แก้ไข/ลบรายการที่ยังไม่ sync ได้ (ถ้ารูปแบบไม่ถูกต้องจะสร้างใหม่)
+  const clientId = String(formData.id || '');
+  const id = /^TXN-\d+$/.test(clientId) ? clientId : 'TXN-' + new Date().getTime();
   const date = formData.date; // YYYY-MM-DD
   const memo = formData.memo.trim();
   const amount = parseFloat(formData.amount);
