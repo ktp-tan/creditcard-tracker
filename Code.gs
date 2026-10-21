@@ -4,7 +4,8 @@
  */
 
 const SHEET_NAME = 'Transactions';
-const HEADERS = ['ID', 'Date', 'Memo', 'Amount', 'Type', 'CreatedAt'];
+const HEADERS = ['ID', 'Date', 'Memo', 'Amount', 'Type', 'CreatedAt', 'Reimburse'];
+const REIMBURSE_COL = 7; // คอลัมน์ G: TRUE = รายการที่ต้องเบิก (ใช้ได้ทั้ง Personal และ Sharing)
 
 /**
  * ฟังก์ชันเริ่มต้นสร้าง/ดึง Sheet
@@ -21,6 +22,10 @@ function getSheet() {
     headerRange.setFontColor('#ffffff');
     headerRange.setFontWeight('bold');
     sheet.setFrozenRows(1);
+  } else if (!sheet.getRange(1, REIMBURSE_COL).getValue()) {
+    // ชีตเดิมที่สร้างก่อนมีคอลัมน์ Reimburse: เติมหัวคอลัมน์ให้
+    sheet.getRange(1, REIMBURSE_COL).setValue(HEADERS[REIMBURSE_COL - 1])
+      .setBackground('#2563eb').setFontColor('#ffffff').setFontWeight('bold');
   }
   return sheet;
 }
@@ -150,7 +155,13 @@ function getInitialData() {
     const rawDate = row[1];
     const memo = String(row[2] || '');
     const amount = Number(row[3]) || 0;
-    const type = String(row[4] || 'Personal');
+    let type = String(row[4] || 'Personal');
+    let reimburse = isTrue(row[REIMBURSE_COL - 1]);
+    if (type.toLowerCase() === 'reimburse') {
+      // รองรับข้อมูลรูปแบบเก่าที่เคยเก็บ "Reimburse" เป็นประเภท
+      type = 'Personal';
+      reimburse = true;
+    }
     const createdAt = row[5] ? Utilities.formatDate(new Date(row[5]), tz, 'yyyy-MM-dd HH:mm') : '';
 
     let dateObj;
@@ -168,11 +179,10 @@ function getInitialData() {
       curTotal += amount;
       if (type.toLowerCase() === 'sharing') {
         curSharing += amount;
-      } else if (type.toLowerCase() === 'reimburse') {
-        curReimburse += amount;
       } else {
         curPersonal += amount;
       }
+      if (reimburse) curReimburse += amount;
     }
 
     // สะสมยอดรอบก่อนหน้า
@@ -180,11 +190,10 @@ function getInitialData() {
       prevTotal += amount;
       if (type.toLowerCase() === 'sharing') {
         prevSharing += amount;
-      } else if (type.toLowerCase() === 'reimburse') {
-        prevReimburse += amount;
       } else {
         prevPersonal += amount;
       }
+      if (reimburse) prevReimburse += amount;
     }
 
     let createdTime = 0;
@@ -209,6 +218,7 @@ function getInitialData() {
         memo: memo,
         amount: amount,
         type: type,
+        reimburse: reimburse,
         createdAt: createdAt,
         timestamp: txTime,
         createdTime: createdTime
@@ -265,10 +275,11 @@ function addTransaction(formData) {
   const date = formData.date; // YYYY-MM-DD
   const memo = formData.memo.trim();
   const amount = parseFloat(formData.amount);
-  const type = formData.type; // Personal | Sharing | Reimburse
+  const type = formData.type; // Personal | Sharing
+  const reimburse = isTrue(formData.reimburse);
   const createdAt = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss');
 
-  sheet.appendRow([id, date, memo, amount, type, createdAt]);
+  sheet.appendRow([id, date, memo, amount, type, createdAt, reimburse]);
 
   return getInitialData();
 }
@@ -288,6 +299,7 @@ function updateTransaction(formData) {
       sheet.getRange(rowIdx, 3).setValue(formData.memo.trim());
       sheet.getRange(rowIdx, 4).setValue(parseFloat(formData.amount));
       sheet.getRange(rowIdx, 5).setValue(formData.type);
+      sheet.getRange(rowIdx, REIMBURSE_COL).setValue(isTrue(formData.reimburse));
       break;
     }
   }
@@ -310,4 +322,11 @@ function deleteTransaction(id) {
   }
 
   return getInitialData();
+}
+
+/**
+ * แปลงค่าจากชีต/ฟอร์มเป็น boolean (รองรับ true, "TRUE", "true")
+ */
+function isTrue(val) {
+  return val === true || String(val).toLowerCase() === 'true';
 }
