@@ -138,8 +138,8 @@ function getInitialData() {
 
   const transactions = [];
 
-  let curTotal = 0, curPersonal = 0, curSharing = 0;
-  let prevTotal = 0, prevPersonal = 0, prevSharing = 0;
+  let curTotal = 0, curPersonal = 0, curSharing = 0, curReimburse = 0;
+  let prevTotal = 0, prevPersonal = 0, prevSharing = 0, prevReimburse = 0;
 
   // วนลูปอ่านข้อมูล (ข้ามแถวหัวตาราง i=0)
   for (let i = 1; i < data.length; i++) {
@@ -168,6 +168,8 @@ function getInitialData() {
       curTotal += amount;
       if (type.toLowerCase() === 'sharing') {
         curSharing += amount;
+      } else if (type.toLowerCase() === 'reimburse') {
+        curReimburse += amount;
       } else {
         curPersonal += amount;
       }
@@ -178,6 +180,8 @@ function getInitialData() {
       prevTotal += amount;
       if (type.toLowerCase() === 'sharing') {
         prevSharing += amount;
+      } else if (type.toLowerCase() === 'reimburse') {
+        prevReimburse += amount;
       } else {
         prevPersonal += amount;
       }
@@ -234,14 +238,16 @@ function getInitialData() {
       dateRange: formatCycleRange(previousCycle),
       total: prevTotal,
       personal: prevPersonal,
-      sharing: prevSharing
+      sharing: prevSharing,
+      reimburse: prevReimburse
     },
     currentCycle: {
       label: 'รอบปัจจุบัน',
       dateRange: formatCycleRange(currentCycle),
       total: curTotal,
       personal: curPersonal,
-      sharing: curSharing
+      sharing: curSharing,
+      reimburse: curReimburse
     },
     transactions: transactions
   };
@@ -259,7 +265,7 @@ function addTransaction(formData) {
   const date = formData.date; // YYYY-MM-DD
   const memo = formData.memo.trim();
   const amount = parseFloat(formData.amount);
-  const type = formData.type; // Personal | Sharing
+  const type = formData.type; // Personal | Sharing | Reimburse
   const createdAt = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss');
 
   sheet.appendRow([id, date, memo, amount, type, createdAt]);

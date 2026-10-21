@@ -99,7 +99,8 @@
     <section class="space-y-2">
       
       <!-- 1.1 รอบก่อนหน้า: แถวเดียว กะทัดรัด ไม่กินที่ -->
-      <div class="bg-white rounded-xl px-3 py-2 shadow-xs border border-slate-200/90 flex items-center justify-between gap-2">
+      <div class="bg-white rounded-xl px-3 py-2 shadow-xs border border-slate-200/90">
+       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 whitespace-nowrap">รอบก่อน</span>
           <span id="prev-range" class="text-[11px] text-slate-400 font-mono truncate">กำลังโหลด...</span>
@@ -114,6 +115,12 @@
             <span class="text-blue-600 font-medium">👤 <span id="prev-personal" class="tabular-nums">฿0</span></span>
             <span class="text-purple-600 font-medium">👥 <span id="prev-sharing" class="tabular-nums">฿0</span></span>
           </div>
+        </div>
+       </div>
+        <!-- แถวยอดเบิก: ยอดที่ต้องเบิกคืนของรอบที่ปิดแล้ว -->
+        <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-100 text-[11px]">
+          <span class="text-amber-700 font-medium">💼 ต้องเบิกรอบนี้</span>
+          <span id="prev-reimburse" class="font-bold text-amber-700 tabular-nums">฿0</span>
         </div>
       </div>
 
@@ -146,6 +153,11 @@
             <div class="flex items-center justify-between text-xs">
               <span class="text-purple-300 text-[10px] font-medium flex items-center gap-0.5">👥 หาร</span>
               <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-sharing">฿0</span>
+            </div>
+            <div class="h-px bg-white/10"></div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-amber-300 text-[10px] font-medium flex items-center gap-0.5">💼 เบิก</span>
+              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-reimburse">฿0</span>
             </div>
           </div>
         </div>
@@ -211,7 +223,7 @@
 
           <div>
             <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ประเภท</label>
-            <div class="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+            <div class="grid grid-cols-3 gap-0.5 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
               <button 
                 type="button" 
                 id="btn-type-personal" 
@@ -227,6 +239,14 @@
                 class="py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition"
               >
                 👥 หาร
+              </button>
+              <button
+                type="button"
+                id="btn-type-reimburse"
+                onclick="setType('Reimburse')"
+                class="py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition"
+              >
+                💼 เบิก
               </button>
             </div>
             <input type="hidden" id="type" value="Personal">
@@ -318,6 +338,7 @@
             <select id="edit-type" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full px-2 py-2 text-xs rounded-xl focus:outline-none shadow-sm font-medium">
               <option value="Personal">👤 Personal (เดี่ยว)</option>
               <option value="Sharing">👥 Sharing (หาร)</option>
+              <option value="Reimburse">💼 Reimburse (เบิก)</option>
             </select>
           </div>
         </div>
@@ -508,35 +529,42 @@
 
     function recalculateSummary() {
       if (!cycleDates) return;
-      let curTotal = 0, curPersonal = 0, curSharing = 0;
-      let prevTotal = 0, prevPersonal = 0, prevSharing = 0;
+      const cur = { total: 0, personal: 0, sharing: 0, reimburse: 0 };
+      const prev = { total: 0, personal: 0, sharing: 0, reimburse: 0 };
 
       cachedTransactions.forEach(tx => {
         const parts = String(tx.date).split('-');
         if (parts.length === 3) {
           const txTime = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0).getTime();
           const amt = parseFloat(tx.amount) || 0;
-          const isSharing = String(tx.type).toLowerCase() === 'sharing';
+          const key = typeKey(tx.type);
 
           if (txTime >= cycleDates.current.startMs && txTime <= cycleDates.current.endMs) {
-            curTotal += amt;
-            if (isSharing) curSharing += amt;
-            else curPersonal += amt;
+            cur.total += amt;
+            cur[key] += amt;
           } else if (txTime >= cycleDates.previous.startMs && txTime <= cycleDates.previous.endMs) {
-            prevTotal += amt;
-            if (isSharing) prevSharing += amt;
-            else prevPersonal += amt;
+            prev.total += amt;
+            prev[key] += amt;
           }
         }
       });
 
-      document.getElementById('cur-total').textContent = formatCurrency(curTotal);
-      document.getElementById('cur-personal').textContent = formatCurrency(curPersonal);
-      document.getElementById('cur-sharing').textContent = formatCurrency(curSharing);
+      renderSummary('cur', cur);
+      renderSummary('prev', prev);
+    }
 
-      document.getElementById('prev-total').textContent = formatCurrency(prevTotal);
-      document.getElementById('prev-personal').textContent = formatCurrency(prevPersonal);
-      document.getElementById('prev-sharing').textContent = formatCurrency(prevSharing);
+    // แปลงประเภทรายการเป็น key ของยอดสรุป: personal | sharing | reimburse
+    function typeKey(type) {
+      const t = String(type).toLowerCase();
+      if (t === 'sharing' || t === 'reimburse') return t;
+      return 'personal';
+    }
+
+    function renderSummary(prefix, s) {
+      document.getElementById(`${prefix}-total`).textContent = formatCurrency(s.total);
+      document.getElementById(`${prefix}-personal`).textContent = formatCurrency(s.personal);
+      document.getElementById(`${prefix}-sharing`).textContent = formatCurrency(s.sharing);
+      document.getElementById(`${prefix}-reimburse`).textContent = formatCurrency(s.reimburse);
     }
 
     function showToast(message, icon = '✅') {
@@ -553,16 +581,14 @@
 
     function setType(type) {
       document.getElementById('type').value = type;
-      const btnPersonal = document.getElementById('btn-type-personal');
-      const btnSharing = document.getElementById('btn-type-sharing');
+      const activeColors = { Personal: 'bg-blue-600', Sharing: 'bg-purple-600', Reimburse: 'bg-amber-600' };
 
-      if (type === 'Personal') {
-        btnPersonal.className = 'py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow-xs transition';
-        btnSharing.className = 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
-      } else {
-        btnPersonal.className = 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
-        btnSharing.className = 'py-1 text-xs font-semibold rounded-lg bg-purple-600 text-white shadow-xs transition';
-      }
+      Object.keys(activeColors).forEach(t => {
+        const btn = document.getElementById(`btn-type-${t.toLowerCase()}`);
+        btn.className = t === type
+          ? `py-1 text-xs font-semibold rounded-lg ${activeColors[t]} text-white shadow-xs transition`
+          : 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
+      });
     }
 
     function formatCurrency(amount) {
@@ -681,17 +707,12 @@
 
     function onDataLoaded(data) {
       if (!data) return;
-      document.getElementById('prev-range').textContent = data.previousCycle.dateRange;
-      document.getElementById('prev-total').textContent = formatCurrency(data.previousCycle.total);
-      document.getElementById('prev-personal').textContent = formatCurrency(data.previousCycle.personal);
-      document.getElementById('prev-sharing').textContent = formatCurrency(data.previousCycle.sharing);
-
-      document.getElementById('cur-range').textContent = data.currentCycle.dateRange;
-      document.getElementById('cur-total').textContent = formatCurrency(data.currentCycle.total);
-      document.getElementById('cur-personal').textContent = formatCurrency(data.currentCycle.personal);
-      document.getElementById('cur-sharing').textContent = formatCurrency(data.currentCycle.sharing);
+      // คำนวณช่วงรอบบิลใหม่ทุกครั้ง เผื่อเปิดแอปค้างไว้ข้ามวันตัดรอบ
+      initCycleDates();
 
       cachedTransactions = sortTransactions(data.transactions || []);
+      // คำนวณยอดสรุปจากรายการที่โหลดมา (ครอบคลุมรอบก่อนหน้า+ปัจจุบันแล้ว) ให้ตรงกับหน้าจอเสมอ
+      recalculateSummary();
       renderTransactions(cachedTransactions);
       updateMemoChips();
     }
@@ -722,9 +743,12 @@
       const displayList = isExpandedAll ? list : list.slice(0, 2);
 
       let html = displayList.map(tx => {
-        const isSharing = String(tx.type).toLowerCase() === 'sharing';
-        const badgeColor = isSharing ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
-        const badgeText = isSharing ? '👥 Sharing' : '👤 Personal';
+        const badges = {
+          personal: { color: 'bg-blue-100 text-blue-700', text: '👤 Personal' },
+          sharing: { color: 'bg-purple-100 text-purple-700', text: '👥 Sharing' },
+          reimburse: { color: 'bg-amber-100 text-amber-700', text: '💼 เบิก' }
+        };
+        const { color: badgeColor, text: badgeText } = badges[typeKey(tx.type)];
 
         return `
           <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center justify-between gap-2.5">
