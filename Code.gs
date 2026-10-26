@@ -5,7 +5,8 @@
 
 const SHEET_NAME = 'Transactions';
 const HEADERS = ['ID', 'Date', 'Memo', 'Amount', 'Type', 'CreatedAt', 'Reimburse'];
-const REIMBURSE_COL = 7; // คอลัมน์ G: TRUE = รายการที่ต้องเบิก (ใช้ได้ทั้ง Personal และ Sharing)
+const REIMBURSE_COL = 7; // คอลัมน์ G: "เบิก" = รายการที่ต้องเบิก, ว่าง = ไม่เบิก (ใช้ได้ทั้ง Personal และ Sharing)
+const REIMBURSE_MARK = 'เบิก';
 
 /**
  * ฟังก์ชันเริ่มต้นสร้าง/ดึง Sheet
@@ -279,7 +280,7 @@ function addTransaction(formData) {
   const reimburse = isTrue(formData.reimburse);
   const createdAt = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss');
 
-  sheet.appendRow([id, date, memo, amount, type, createdAt, reimburse]);
+  sheet.appendRow([id, date, memo, amount, type, createdAt, reimburse ? REIMBURSE_MARK : '']);
 
   return getInitialData();
 }
@@ -299,7 +300,7 @@ function updateTransaction(formData) {
       sheet.getRange(rowIdx, 3).setValue(formData.memo.trim());
       sheet.getRange(rowIdx, 4).setValue(parseFloat(formData.amount));
       sheet.getRange(rowIdx, 5).setValue(formData.type);
-      sheet.getRange(rowIdx, REIMBURSE_COL).setValue(isTrue(formData.reimburse));
+      sheet.getRange(rowIdx, REIMBURSE_COL).setValue(isTrue(formData.reimburse) ? REIMBURSE_MARK : '');
       break;
     }
   }
@@ -325,8 +326,9 @@ function deleteTransaction(id) {
 }
 
 /**
- * แปลงค่าจากชีต/ฟอร์มเป็น boolean (รองรับ true, "TRUE", "true")
+ * แปลงค่าจากชีต/ฟอร์มเป็น boolean (รองรับ "เบิก", true, "TRUE", "true")
+ * TRUE ยังรองรับไว้สำหรับแถวที่บันทึกก่อนเปลี่ยนมาใช้คำว่า "เบิก"
  */
 function isTrue(val) {
-  return val === true || String(val).toLowerCase() === 'true';
+  return val === true || String(val).trim() === REIMBURSE_MARK || String(val).toLowerCase() === 'true';
 }
