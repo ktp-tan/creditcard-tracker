@@ -474,11 +474,12 @@
   </div>
 
   <!-- Calculator Modal: พิมพ์สูตรเช่น 120+85+40 แล้วกด "ใช้ค่านี้" เพื่อใส่ผลลัพธ์ลงช่องที่เลือก -->
-  <div id="calc-modal" class="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center hidden">
+  <!-- กดพื้นที่มืดรอบๆ (นอกกล่องเครื่องคิดเลข) เพื่อปิด -->
+  <div id="calc-modal" onclick="if (event.target === this) closeCalc()" class="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center hidden">
     <div class="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-3 pb-5 shadow-xl space-y-2.5">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold text-slate-900 text-sm">🧮 เครื่องคิดเลข <span id="calc-target-label" class="text-xs font-normal text-slate-500"></span></h3>
-        <button type="button" onclick="closeCalc()" class="text-slate-400 hover:text-slate-600 text-xl leading-none px-1">&times;</button>
+        <button type="button" onclick="closeCalc()" class="w-9 h-9 -mr-1 rounded-full bg-slate-100 text-slate-500 hover:text-slate-700 text-2xl leading-none flex items-center justify-center active:scale-95">&times;</button>
       </div>
       <div class="bg-slate-900 rounded-xl px-3 py-2 text-right">
         <div id="calc-expr" class="text-slate-400 text-sm font-mono min-h-[20px] break-all"></div>
