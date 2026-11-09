@@ -122,6 +122,11 @@
           <span id="prev-reimburse-label" class="text-amber-700 font-medium">💼 ต้องเบิกรอบก่อน</span>
           <span id="prev-reimburse" class="font-bold text-amber-700 tabular-nums">฿0</span>
         </div>
+        <!-- แถวยอดที่ต้องเก็บจากคนอื่น (ส่วนคนอื่นของรายการหาร) -->
+        <div class="flex items-center justify-between mt-1 text-[11px]">
+          <span class="text-purple-700 font-medium">💸 ต้องเก็บจากคนอื่น</span>
+          <span id="prev-others" class="font-bold text-purple-700 tabular-nums">฿0</span>
+        </div>
       </div>
 
       <!-- 1.2 รอบปัจจุบัน: ยอดรวมตัวเลขใหญ่เท่าเดิม ประหยัดพื้นที่ลง 50% -->
@@ -159,6 +164,11 @@
               <span class="text-amber-300 text-[10px] font-medium flex items-center gap-0.5">💼 เบิก</span>
               <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-reimburse">฿0</span>
             </div>
+            <div class="h-px bg-white/10"></div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-purple-300 text-[10px] font-medium flex items-center gap-0.5">💸 เก็บคนอื่น</span>
+              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-others">฿0</span>
+            </div>
           </div>
         </div>
       </div>
@@ -186,8 +196,9 @@
               id="amount" 
               placeholder="0.00" 
               style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
-              class="w-full pl-9 pr-3 py-1.5 text-2xl font-bold rounded-xl focus:outline-none transition shadow-sm tabular-nums"
+              class="w-full pl-9 pr-12 py-1.5 text-2xl font-bold rounded-xl focus:outline-none transition shadow-sm tabular-nums"
             >
+            <button type="button" data-calc="amount" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-base flex items-center justify-center active:scale-95 transition z-10" title="เปิดเครื่องคิดเลข">🧮</button>
           </div>
           <!-- ปุ่มเบิก: เปิด/ปิดได้ ใช้ร่วมกับประเภทเดี่ยวหรือหารก็ได้ -->
           <button
@@ -257,6 +268,35 @@
           </div>
         </div>
 
+        <!-- แบ่งค่าใช้จ่าย: แสดงเฉพาะตอนเลือก "หาร" ส่วนของฉัน + ส่วนคนอื่น = ยอดเงินเสมอ -->
+        <div id="split-panel" data-split-prefix="" class="hidden rounded-xl border border-purple-200 bg-purple-50 p-2.5 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-semibold text-purple-800">👥 แบ่งค่าใช้จ่าย</span>
+            <div class="flex gap-1">
+              <button type="button" data-split-n="2" class="px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition">÷2</button>
+              <button type="button" data-split-n="3" class="px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition">÷3</button>
+              <button type="button" data-split-n="4" class="px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition">÷4</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-medium text-purple-800 mb-0.5">🙋 ส่วนของฉัน</label>
+              <div class="relative">
+                <input type="number" step="0.01" inputmode="decimal" id="my-share" data-share="mine" placeholder="0.00" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full pl-2.5 pr-10 py-1.5 text-base font-bold rounded-lg focus:outline-none tabular-nums">
+                <button type="button" data-calc="my-share" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-base flex items-center justify-center active:scale-95 transition z-10" title="เปิดเครื่องคิดเลข">🧮</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-medium text-purple-800 mb-0.5">👥 ส่วนคนอื่น</label>
+              <div class="relative">
+                <input type="number" step="0.01" inputmode="decimal" id="other-share" data-share="other" placeholder="0.00" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full pl-2.5 pr-10 py-1.5 text-base font-bold rounded-lg focus:outline-none tabular-nums">
+                <button type="button" data-calc="other-share" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-base flex items-center justify-center active:scale-95 transition z-10" title="เปิดเครื่องคิดเลข">🧮</button>
+              </div>
+            </div>
+          </div>
+          <p id="split-hint" class="text-[10px] text-purple-700"></p>
+        </div>
+
         <!-- ปุ่มกดบันทึก: ตอบสนองทันที 0ms -->
         <button 
           type="submit" 
@@ -304,6 +344,7 @@
 
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">ยอดเงิน (บาท)</label>
+          <div class="relative">
           <input 
             type="number" 
             step="0.01" 
@@ -311,8 +352,10 @@
             required 
             id="edit-amount" 
             style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;"
-            class="w-full px-3 py-2 text-base font-bold rounded-xl focus:outline-none shadow-sm"
+            class="w-full px-3 pr-12 py-2 text-xl font-bold rounded-xl focus:outline-none shadow-sm tabular-nums"
           >
+            <button type="button" data-calc="edit-amount" class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-base flex items-center justify-center active:scale-95 transition z-10" title="เปิดเครื่องคิดเลข">🧮</button>
+          </div>
         </div>
 
         <div>
@@ -339,11 +382,40 @@
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">ประเภท</label>
-            <select id="edit-type" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full px-2 py-2 text-xs rounded-xl focus:outline-none shadow-sm font-medium">
+            <select id="edit-type" onchange="toggleSplitPanel('edit-')" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full px-2 py-2 text-xs rounded-xl focus:outline-none shadow-sm font-medium">
               <option value="Personal">👤 Personal (เดี่ยว)</option>
               <option value="Sharing">👥 Sharing (หาร)</option>
             </select>
           </div>
+        </div>
+
+        <!-- แบ่งค่าใช้จ่าย: แสดงเฉพาะตอนเลือก "หาร" ส่วนของฉัน + ส่วนคนอื่น = ยอดเงินเสมอ -->
+        <div id="edit-split-panel" data-split-prefix="edit-" class="hidden rounded-xl border border-purple-200 bg-purple-50 p-2 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-semibold text-purple-800">👥 แบ่งค่าใช้จ่าย</span>
+            <div class="flex gap-1">
+              <button type="button" data-split-n="2" class="px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition">÷2</button>
+              <button type="button" data-split-n="3" class="px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition">÷3</button>
+              <button type="button" data-split-n="4" class="px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition">÷4</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-medium text-purple-800 mb-0.5">🙋 ส่วนของฉัน</label>
+              <div class="relative">
+                <input type="number" step="0.01" inputmode="decimal" id="edit-my-share" data-share="mine" placeholder="0.00" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full pl-2.5 pr-10 py-1.5 text-base font-bold rounded-lg focus:outline-none tabular-nums">
+                <button type="button" data-calc="edit-my-share" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-base flex items-center justify-center active:scale-95 transition z-10" title="เปิดเครื่องคิดเลข">🧮</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-medium text-purple-800 mb-0.5">👥 ส่วนคนอื่น</label>
+              <div class="relative">
+                <input type="number" step="0.01" inputmode="decimal" id="edit-other-share" data-share="other" placeholder="0.00" style="background-color: #ffffff !important; background: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; color-scheme: light !important; border: 2px solid #94a3b8 !important;" class="w-full pl-2.5 pr-10 py-1.5 text-base font-bold rounded-lg focus:outline-none tabular-nums">
+                <button type="button" data-calc="edit-other-share" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-base flex items-center justify-center active:scale-95 transition z-10" title="เปิดเครื่องคิดเลข">🧮</button>
+              </div>
+            </div>
+          </div>
+          <p id="edit-split-hint" class="text-[10px] text-purple-700"></p>
         </div>
 
         <label class="flex items-center gap-2 text-xs font-medium text-slate-700">
@@ -401,8 +473,42 @@
     </div>
   </div>
 
+  <!-- Calculator Modal: พิมพ์สูตรเช่น 120+85+40 แล้วกด "ใช้ค่านี้" เพื่อใส่ผลลัพธ์ลงช่องที่เลือก -->
+  <div id="calc-modal" class="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center hidden">
+    <div class="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-3 pb-5 shadow-xl space-y-2.5">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-slate-900 text-sm">🧮 เครื่องคิดเลข <span id="calc-target-label" class="text-xs font-normal text-slate-500"></span></h3>
+        <button type="button" onclick="closeCalc()" class="text-slate-400 hover:text-slate-600 text-xl leading-none px-1">&times;</button>
+      </div>
+      <div class="bg-slate-900 rounded-xl px-3 py-2 text-right">
+        <div id="calc-expr" class="text-slate-400 text-sm font-mono min-h-[20px] break-all"></div>
+        <div id="calc-result" class="text-white text-3xl font-bold tabular-nums truncate">0</div>
+      </div>
+      <div id="calc-keys" class="grid grid-cols-4 gap-1.5 select-none">
+        <button type="button" data-key="C" class="py-3 rounded-xl bg-rose-100 text-rose-700 font-bold text-lg active:scale-95 transition">C</button>
+        <button type="button" data-key="back" class="py-3 rounded-xl bg-slate-200 text-slate-700 font-bold text-lg active:scale-95 transition">⌫</button>
+        <button type="button" data-key="/" class="py-3 rounded-xl bg-indigo-100 text-indigo-700 font-black text-2xl active:scale-95 transition">÷</button>
+        <button type="button" data-key="*" class="py-3 rounded-xl bg-indigo-100 text-indigo-700 font-black text-2xl active:scale-95 transition">×</button>
+        <button type="button" data-key="7" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">7</button>
+        <button type="button" data-key="8" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">8</button>
+        <button type="button" data-key="9" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">9</button>
+        <button type="button" data-key="-" class="py-3 rounded-xl bg-indigo-100 text-indigo-700 font-black text-2xl active:scale-95 transition">−</button>
+        <button type="button" data-key="4" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">4</button>
+        <button type="button" data-key="5" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">5</button>
+        <button type="button" data-key="6" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">6</button>
+        <button type="button" data-key="+" class="py-3 rounded-xl bg-indigo-100 text-indigo-700 font-black text-2xl active:scale-95 transition">+</button>
+        <button type="button" data-key="1" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">1</button>
+        <button type="button" data-key="2" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">2</button>
+        <button type="button" data-key="3" class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">3</button>
+        <button type="button" data-key="ok" class="row-span-2 rounded-xl bg-indigo-600 text-white font-bold text-sm active:scale-95 transition leading-tight">✓<br>ใช้ค่านี้</button>
+        <button type="button" data-key="0" class="col-span-2 py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">0</button>
+        <button type="button" data-key="." class="py-3 rounded-xl bg-slate-100 text-slate-900 font-bold text-xl active:scale-95 transition">.</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2 rounded-full shadow-lg opacity-0 transition-opacity pointer-events-none z-50 flex items-center gap-2">
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2 rounded-full shadow-lg opacity-0 transition-opacity pointer-events-none z-[70] flex items-center gap-2">
     <span id="toast-icon">✅</span>
     <span id="toast-message">บันทึกเรียบร้อย</span>
   </div>
@@ -435,6 +541,45 @@
         if (!btn) return;
         if (btn.dataset.action === 'edit') openEditModal(btn.dataset.id);
         else if (btn.dataset.action === 'delete') openDeleteModal(btn.dataset.id);
+      });
+
+      // แบ่งค่าใช้จ่าย: พิมพ์ช่องไหน อีกช่องคำนวณให้อัตโนมัติจากยอดเงิน
+      document.addEventListener('input', (e) => {
+        const t = e.target;
+        if (t.dataset.share) {
+          const p = t.closest('[data-split-prefix]').dataset.splitPrefix;
+          splitMode[p] = t.dataset.share;
+          applySplit(p);
+        } else if (t.id === 'amount') {
+          applySplit('');
+        } else if (t.id === 'edit-amount') {
+          applySplit('edit-');
+        }
+      });
+      document.addEventListener('click', (e) => {
+        const splitBtn = e.target.closest('[data-split-n]');
+        if (splitBtn) {
+          const p = splitBtn.closest('[data-split-prefix]').dataset.splitPrefix;
+          splitMode[p] = Number(splitBtn.dataset.splitN);
+          applySplit(p);
+          return;
+        }
+        const calcBtn = e.target.closest('[data-calc]');
+        if (calcBtn) openCalc(calcBtn.dataset.calc);
+      });
+      document.getElementById('calc-keys').addEventListener('click', (e) => {
+        const key = e.target.closest('[data-key]');
+        if (key) pressCalcKey(key.dataset.key);
+      });
+      // รองรับคีย์บอร์ดตอนเปิดเครื่องคิดเลข (ใช้บนคอม)
+      document.addEventListener('keydown', (e) => {
+        if (!calcTargetId) return;
+        const map = { Enter: 'ok', '=': 'ok', Backspace: 'back', Delete: 'C', Escape: 'esc' };
+        const k = map[e.key] || (/^[0-9.+\-*/]$/.test(e.key) ? e.key : null);
+        if (!k) return;
+        e.preventDefault();
+        if (k === 'esc') closeCalc();
+        else pressCalcKey(k);
       });
 
       initCycleDates();
@@ -538,8 +683,8 @@
 
     function recalculateSummary() {
       if (!cycleDates) return;
-      const cur = { total: 0, personal: 0, sharing: 0, reimburse: 0 };
-      const prev = { total: 0, personal: 0, sharing: 0, reimburse: 0 };
+      const cur = { total: 0, personal: 0, sharing: 0, reimburse: 0, others: 0 };
+      const prev = { total: 0, personal: 0, sharing: 0, reimburse: 0, others: 0 };
 
       cachedTransactions.forEach(tx => {
         const parts = String(tx.date).split('-');
@@ -548,15 +693,18 @@
           const amt = parseFloat(tx.amount) || 0;
           const key = typeKey(tx.type);
           const reimb = isReimburse(tx);
+          const others = othersShare(tx);
 
           if (txTime >= cycleDates.current.startMs && txTime <= cycleDates.current.endMs) {
             cur.total += amt;
             cur[key] += amt;
             if (reimb) cur.reimburse += amt;
+            cur.others += others;
           } else if (txTime >= cycleDates.previous.startMs && txTime <= cycleDates.previous.endMs) {
             prev.total += amt;
             prev[key] += amt;
             if (reimb) prev.reimburse += amt;
+            prev.others += others;
           }
         }
       });
@@ -589,6 +737,192 @@
       document.getElementById(`${prefix}-personal`).textContent = formatCurrency(s.personal);
       document.getElementById(`${prefix}-sharing`).textContent = formatCurrency(s.sharing);
       document.getElementById(`${prefix}-reimburse`).textContent = formatCurrency(s.reimburse);
+      document.getElementById(`${prefix}-others`).textContent = formatCurrency(s.others);
+    }
+
+    // ส่วนของฉันในรายการหาร (null = ไม่ได้ระบุ เช่น รายการเก่าก่อนมีฟีเจอร์นี้)
+    function myShareOf(tx) {
+      if (typeKey(tx.type) !== 'sharing' || tx.myShare === null || tx.myShare === undefined || tx.myShare === '') return null;
+      const n = parseFloat(tx.myShare);
+      return isNaN(n) ? null : n;
+    }
+
+    // ยอดที่ต้องเก็บจากคนอื่น = ยอดเงิน - ส่วนของฉัน
+    function othersShare(tx) {
+      const mine = myShareOf(tx);
+      return mine === null ? 0 : (parseFloat(tx.amount) || 0) - mine;
+    }
+
+    // ===== แบ่งค่าใช้จ่าย (หาร) =====
+    // splitMode: ตัวเลข = หารเท่ากันกี่คน, 'mine' / 'other' = ช่องที่พิมพ์เองล่าสุด (อีกช่องคำนวณจากยอดเงิน)
+    // key '' = ฟอร์มบันทึก, 'edit-' = หน้าต่างแก้ไข
+    const splitMode = { '': 2, 'edit-': 2 };
+
+    function round2(n) {
+      return Math.round(n * 100) / 100;
+    }
+
+    function splitEls(p) {
+      return {
+        amount: document.getElementById(p ? 'edit-amount' : 'amount'),
+        type: document.getElementById(p ? 'edit-type' : 'type'),
+        panel: document.getElementById(`${p}split-panel`),
+        mine: document.getElementById(`${p}my-share`),
+        other: document.getElementById(`${p}other-share`),
+        hint: document.getElementById(`${p}split-hint`)
+      };
+    }
+
+    function toggleSplitPanel(p) {
+      const el = splitEls(p);
+      el.panel.classList.toggle('hidden', el.type.value !== 'Sharing');
+      applySplit(p);
+    }
+
+    function applySplit(p) {
+      const el = splitEls(p);
+      const total = parseFloat(el.amount.value);
+      const mode = splitMode[p];
+
+      if (typeof mode === 'number') {
+        const mine = isNaN(total) ? '' : round2(total / mode);
+        el.mine.value = mine;
+        el.other.value = mine === '' ? '' : round2(total - mine);
+      } else if (!isNaN(total)) {
+        const [src, dst] = mode === 'mine' ? [el.mine, el.other] : [el.other, el.mine];
+        dst.value = src.value === '' ? '' : round2(total - parseFloat(src.value));
+      }
+      updateSplitHint(p);
+    }
+
+    function getSplitError(p) {
+      const el = splitEls(p);
+      const total = parseFloat(el.amount.value);
+      const mine = parseFloat(el.mine.value);
+      if (isNaN(total) || isNaN(mine)) return null;
+      if (mine < 0 || mine > total) return 'ส่วนของฉันต้องอยู่ระหว่าง ฿0 ถึงยอดเงิน';
+      return null;
+    }
+
+    function updateSplitHint(p) {
+      const el = splitEls(p);
+      const mode = splitMode[p];
+
+      el.panel.querySelectorAll('[data-split-n]').forEach(btn => {
+        const on = Number(btn.dataset.splitN) === mode;
+        btn.className = on
+          ? 'px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-600 bg-purple-600 text-white active:scale-95 transition'
+          : 'px-2 py-0.5 text-[11px] font-semibold rounded-md border border-purple-300 bg-white text-purple-700 active:scale-95 transition';
+      });
+
+      const err = getSplitError(p);
+      el.hint.className = err ? 'text-[10px] text-rose-600 font-semibold' : 'text-[10px] text-purple-700';
+      if (err) {
+        el.hint.textContent = '⚠️ ' + err;
+      } else if (el.mine.value === '' || el.amount.value === '') {
+        el.hint.textContent = 'ใส่ยอดเงิน แล้วเลือก ÷2 ÷3 ÷4 หรือพิมพ์ส่วนของฉันเอง';
+      } else {
+        const people = typeof mode === 'number' ? ` (หารเท่ากัน ${mode} คน)` : '';
+        el.hint.textContent = `ฉันจ่ายจริง ${formatCurrency(el.mine.value)} · ต้องเก็บคนอื่น ${formatCurrency(el.other.value)}${people}`;
+      }
+    }
+
+    // ค่า myShare ที่จะบันทึก: ตัวเลขเมื่อเป็นรายการหารและกรอกไว้ ไม่งั้น null
+    function readMyShare(p, typeVal) {
+      const v = splitEls(p).mine.value;
+      return typeVal === 'Sharing' && v !== '' ? round2(parseFloat(v)) : null;
+    }
+
+    // ===== เครื่องคิดเลข =====
+    let calcTargetId = null;
+    let calcExpr = '';
+    const CALC_LABELS = {
+      'amount': 'ยอดเงิน', 'edit-amount': 'ยอดเงิน',
+      'my-share': 'ส่วนของฉัน', 'edit-my-share': 'ส่วนของฉัน',
+      'other-share': 'ส่วนคนอื่น', 'edit-other-share': 'ส่วนคนอื่น'
+    };
+
+    function openCalc(targetId) {
+      calcTargetId = targetId;
+      const v = parseFloat(document.getElementById(targetId).value);
+      calcExpr = isNaN(v) ? '' : String(v);
+      document.getElementById('calc-target-label').textContent = `→ ${CALC_LABELS[targetId] || ''}`;
+      if (document.activeElement) document.activeElement.blur(); // ซ่อนคีย์บอร์ดมือถือ
+      renderCalc();
+      document.getElementById('calc-modal').classList.remove('hidden');
+    }
+
+    function closeCalc() {
+      calcTargetId = null;
+      document.getElementById('calc-modal').classList.add('hidden');
+    }
+
+    function pressCalcKey(k) {
+      const ops = '+-*/';
+      const last = calcExpr.slice(-1);
+
+      if (k === 'ok') return applyCalc();
+      if (k === 'C') calcExpr = '';
+      else if (k === 'back') calcExpr = calcExpr.slice(0, -1);
+      else if (ops.includes(k)) {
+        if (calcExpr === '') {
+          if (k === '-') calcExpr = '-';
+        } else if (ops.includes(last)) {
+          if (calcExpr.length > 1) calcExpr = calcExpr.slice(0, -1) + k; // กดเครื่องหมายซ้ำ = เปลี่ยนเครื่องหมาย
+        } else {
+          calcExpr += k;
+        }
+      } else if (k === '.') {
+        const seg = calcExpr.split(/[+\-*/]/).pop();
+        if (!seg.includes('.')) calcExpr += seg === '' ? '0.' : '.';
+      } else {
+        calcExpr += k;
+      }
+      renderCalc();
+    }
+
+    // คำนวณสูตรเอง (ไม่ใช้ eval): รองรับ + - × ÷ โดย × ÷ คิดก่อน + -
+    function evaluateExpression(expr) {
+      const tokens = expr.replace(/[+\-*/]+$/, '').match(/\d+\.?\d*|\.\d+|[+\-*/]/g);
+      if (!tokens) return null;
+      if ('+-*/'.includes(tokens[0])) tokens.unshift('0');
+
+      const terms = [parseFloat(tokens[0])];
+      for (let i = 1; i < tokens.length; i += 2) {
+        const op = tokens[i];
+        const n = parseFloat(tokens[i + 1]);
+        if (isNaN(n)) return null;
+        if (op === '*') terms[terms.length - 1] *= n;
+        else if (op === '/') {
+          if (n === 0) return null;
+          terms[terms.length - 1] /= n;
+        } else {
+          terms.push(op === '-' ? -n : n);
+        }
+      }
+      const result = terms.reduce((a, b) => a + b, 0);
+      return isFinite(result) ? result : null;
+    }
+
+    function renderCalc() {
+      document.getElementById('calc-expr').textContent = calcExpr
+        .replace(/\*/g, ' × ').replace(/\//g, ' ÷ ').replace(/\+/g, ' + ').replace(/(?!^)-/g, ' − ');
+      const result = evaluateExpression(calcExpr);
+      document.getElementById('calc-result').textContent = calcExpr === ''
+        ? '0'
+        : result === null ? '—' : Number(round2(result)).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+    }
+
+    function applyCalc() {
+      const result = evaluateExpression(calcExpr);
+      if (calcExpr !== '' && result === null) {
+        showToast('สูตรคำนวณไม่ถูกต้อง', '⚠️');
+        return;
+      }
+      const input = document.getElementById(calcTargetId);
+      input.value = result === null ? '' : round2(result);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      closeCalc();
     }
 
     function showToast(message, icon = '✅') {
@@ -613,6 +947,7 @@
           ? `py-1 text-xs font-semibold rounded-lg ${activeColors[t]} text-white shadow-xs transition`
           : 'py-1 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition';
       });
+      toggleSplitPanel('');
     }
 
     function formatCurrency(amount) {
@@ -775,6 +1110,10 @@
         const reimburseBadge = isReimburse(tx)
           ? '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">💼 เบิก</span>'
           : '';
+        const mine = myShareOf(tx);
+        const splitLine = mine === null
+          ? ''
+          : `<p class="text-[10px] text-purple-600 mt-0.5 tabular-nums">🙋 ฉัน ${formatCurrency(mine)} · 👥 คนอื่น ${formatCurrency(othersShare(tx))}</p>`;
 
         return `
           <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-xs flex items-center justify-between gap-2.5">
@@ -789,6 +1128,7 @@
               <p class="text-xs sm:text-sm font-semibold text-slate-800 truncate" title="${escapeHtml(tx.memo)}">
                 ${escapeHtml(tx.memo || 'ไม่มี Memo')}
               </p>
+              ${splitLine}
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
@@ -851,6 +1191,12 @@
       const typeVal = document.getElementById('type').value;
       const reimburseVal = document.getElementById('reimburse').value === 'true';
 
+      if (typeVal === 'Sharing' && getSplitError('')) {
+        showToast(getSplitError(''), '⚠️');
+        return;
+      }
+      const myShareVal = readMyShare('', typeVal);
+
       // สร้าง ID ฝั่งเครื่องแล้วส่งให้เซิร์ฟเวอร์ใช้ ID เดียวกัน
       // เพื่อให้แก้ไข/ลบรายการได้ทันทีโดยไม่ต้องรอ sync
       const nowMs = Date.now();
@@ -862,13 +1208,17 @@
         memo: memoVal,
         date: dateVal,
         type: typeVal,
-        reimburse: reimburseVal
+        reimburse: reimburseVal,
+        myShare: myShareVal === null ? '' : myShareVal
       };
 
       document.getElementById('amount').value = '';
       document.getElementById('memo').value = '';
       // รีเซ็ตปุ่มเบิกทุกครั้งหลังบันทึก กันลืมปิดแล้วรายการถัดไปติดเบิกไปด้วย
       setReimburse(false);
+      // ล้างช่องแบ่งค่าใช้จ่าย (จำจำนวนคนที่หารไว้ ถ้าพิมพ์เองให้กลับไปเป็น ÷2)
+      if (typeof splitMode[''] !== 'number') splitMode[''] = 2;
+      applySplit('');
 
       const newTx = {
         id: txId,
@@ -877,6 +1227,7 @@
         amount: parseFloat(amountVal),
         type: typeVal,
         reimburse: reimburseVal,
+        myShare: myShareVal,
         createdAt: new Date().toISOString(),
         createdTime: nowMs
       };
@@ -907,6 +1258,15 @@
       document.getElementById('edit-type').value = typeKey(tx.type) === 'sharing' ? 'Sharing' : 'Personal';
       document.getElementById('edit-reimburse').checked = isReimburse(tx);
 
+      const mine = myShareOf(tx);
+      if (mine === null) {
+        splitMode['edit-'] = 2;
+      } else {
+        splitMode['edit-'] = 'mine';
+        document.getElementById('edit-my-share').value = mine;
+      }
+      toggleSplitPanel('edit-');
+
       document.getElementById('edit-modal').classList.remove('hidden');
     }
 
@@ -926,6 +1286,13 @@
         reimburse: document.getElementById('edit-reimburse').checked
       };
 
+      if (formData.type === 'Sharing' && getSplitError('edit-')) {
+        showToast(getSplitError('edit-'), '⚠️');
+        return;
+      }
+      const myShareVal = readMyShare('edit-', formData.type);
+      formData.myShare = myShareVal === null ? '' : myShareVal;
+
       closeEditModal();
 
       const idx = cachedTransactions.findIndex(t => String(t.id) === String(formData.id));
@@ -936,7 +1303,8 @@
           memo: formData.memo,
           date: formData.date,
           type: formData.type,
-          reimburse: formData.reimburse
+          reimburse: formData.reimburse,
+          myShare: myShareVal
         };
         cachedTransactions = sortTransactions(cachedTransactions);
         renderTransactions(cachedTransactions);

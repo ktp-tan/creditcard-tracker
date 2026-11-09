@@ -4,9 +4,10 @@
  */
 
 const SHEET_NAME = 'Transactions';
-const HEADERS = ['ID', 'Date', 'Memo', 'Amount', 'Type', 'CreatedAt', 'Reimburse'];
+const HEADERS = ['ID', 'Date', 'Memo', 'Amount', 'Type', 'CreatedAt', 'Reimburse', 'MyShare'];
 const REIMBURSE_COL = 7; // คอลัมน์ G: "เบิก" = รายการที่ต้องเบิก, ว่าง = ไม่เบิก (ใช้ได้ทั้ง Personal และ Sharing)
 const REIMBURSE_MARK = 'เบิก';
+const MYSHARE_COL = 8; // คอลัมน์ H: ส่วนของฉันในรายการหาร (ส่วนคนอื่น = Amount - MyShare), ว่าง = ไม่ได้ระบุ
 
 /**
  * ฟังก์ชันเริ่มต้นสร้าง/ดึง Sheet
@@ -23,10 +24,15 @@ function getSheet() {
     headerRange.setFontColor('#ffffff');
     headerRange.setFontWeight('bold');
     sheet.setFrozenRows(1);
-  } else if (!sheet.getRange(1, REIMBURSE_COL).getValue()) {
-    // ชีตเดิมที่สร้างก่อนมีคอลัมน์ Reimburse: เติมหัวคอลัมน์ให้
-    sheet.getRange(1, REIMBURSE_COL).setValue(HEADERS[REIMBURSE_COL - 1])
-      .setBackground('#2563eb').setFontColor('#ffffff').setFontWeight('bold');
+  } else {
+    // ชีตเดิมที่สร้างก่อนมีคอลัมน์ Reimburse / MyShare: เติมหัวคอลัมน์ที่ยังขาด
+    [REIMBURSE_COL, MYSHARE_COL].forEach((col) => {
+      const cell = sheet.getRange(1, col);
+      if (!cell.getValue()) {
+        cell.setValue(HEADERS[col - 1])
+          .setBackground('#2563eb').setFontColor('#ffffff').setFontWeight('bold');
+      }
+    });
   }
   return sheet;
 }
@@ -144,8 +150,8 @@ function getInitialData() {
 
   const transactions = [];
 
-  let curTotal = 0, curPersonal = 0, curSharing = 0, curReimburse = 0;
-  let prevTotal = 0, prevPersonal = 0, prevSharing = 0, prevReimburse = 0;
+  let curTotal = 0, curPersonal = 0, curSharing = 0, curReimburse = 0, curOthers = 0;
+  let prevTotal = 0, prevPersonal = 0, prevSharing = 0, prevReimburse = 0, prevOthers = 0;
 
   // วนลูปอ่านข้อมูล (ข้ามแถวหัวตาราง i=0)
   for (let i = 1; i < data.length; i++) {
@@ -163,6 +169,9 @@ function getInitialData() {
       type = 'Personal';
       reimburse = true;
     }
+    // ส่วนของฉันในรายการหาร (null = ไม่ได้ระบุ) ส่วนที่เหลือคือยอดที่ต้องเก็บจากคนอื่น
+    const myShare = parseShare(type, row[MYSHARE_COL - 1]);
+    const othersShare = myShare === '' ? 0 : amount - myShare;
     const createdAt = row[5] ? Utilities.formatDate(new Date(row[5]), tz, 'yyyy-MM-dd HH:mm') : '';
 
     let dateObj;
@@ -184,6 +193,7 @@ function getInitialData() {
         curPersonal += amount;
       }
       if (reimburse) curReimburse += amount;
+      curOthers += othersShare;
     }
 
     // สะสมยอดรอบก่อนหน้า
@@ -195,6 +205,7 @@ function getInitialData() {
         prevPersonal += amount;
       }
       if (reimburse) prevReimburse += amount;
+      prevOthers += othersShare;
     }
 
     let createdTime = 0;
@@ -220,6 +231,7 @@ function getInitialData() {
         amount: amount,
         type: type,
         reimburse: reimburse,
+        myShare: myShare === '' ? null : myShare,
         createdAt: createdAt,
         timestamp: txTime,
         createdTime: createdTime
@@ -250,7 +262,8 @@ function getInitialData() {
       total: prevTotal,
       personal: prevPersonal,
       sharing: prevSharing,
-      reimburse: prevReimburse
+      reimburse: prevReimburse,
+      others: prevOthers
     },
     currentCycle: {
       label: 'รอบปัจจุบัน',
@@ -258,7 +271,8 @@ function getInitialData() {
       total: curTotal,
       personal: curPersonal,
       sharing: curSharing,
-      reimburse: curReimburse
+      reimburse: curReimburse,
+      others: curOthers
     },
     transactions: transactions
   };
@@ -280,7 +294,9 @@ function addTransaction(formData) {
   const reimburse = isTrue(formData.reimburse);
   const createdAt = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss');
 
-  sheet.appendRow([id, date, memo, amount, type, createdAt, reimburse ? REIMBURSE_MARK : '']);
+  const myShare = parseShare(type, formData.myShare);
+
+  sheet.appendRow([id, date, memo, amount, type, createdAt, reimburse ? REIMBURSE_MARK : '', myShare]);
 
   return getInitialData();
 }
@@ -301,6 +317,7 @@ function updateTransaction(formData) {
       sheet.getRange(rowIdx, 4).setValue(parseFloat(formData.amount));
       sheet.getRange(rowIdx, 5).setValue(formData.type);
       sheet.getRange(rowIdx, REIMBURSE_COL).setValue(isTrue(formData.reimburse) ? REIMBURSE_MARK : '');
+      sheet.getRange(rowIdx, MYSHARE_COL).setValue(parseShare(formData.type, formData.myShare));
       break;
     }
   }
@@ -331,4 +348,13 @@ function deleteTransaction(id) {
  */
 function isTrue(val) {
   return val === true || String(val).trim() === REIMBURSE_MARK || String(val).toLowerCase() === 'true';
+}
+
+/**
+ * ส่วนของฉันในรายการหาร: คืนตัวเลข หรือ '' ถ้าไม่ใช่รายการหาร/ไม่ได้ระบุ
+ */
+function parseShare(type, val) {
+  if (String(type).toLowerCase() !== 'sharing' || val === '' || val === null || val === undefined) return '';
+  const n = parseFloat(val);
+  return isNaN(n) ? '' : n;
 }
