@@ -95,6 +95,12 @@
 
   <main class="max-w-md mx-auto px-3.5 pt-3 space-y-3">
 
+    <!-- แถบเตือน: Code.gs บน Apps Script ยังไม่ได้ deploy เวอร์ชันที่รองรับส่วนแบ่ง -->
+    <div id="outdated-banner" class="hidden bg-amber-50 border border-amber-300 text-amber-800 rounded-xl px-3 py-2 text-[11px] leading-snug">
+      ⚠️ Code.gs บน Apps Script ยังเป็นเวอร์ชันเก่า ส่วนแบ่ง (ส่วนของฉัน/คนอื่น) จะยังไม่ถูกบันทึกลงชีต
+      — วางโค้ด Code.gs ล่าสุดแล้ว Deploy เป็น New version
+    </div>
+
     <!-- Section 1: Billing Cycles Summary Cards (แบบเดิมที่กะทัดรัดและลงตัวที่สุด) -->
     <section class="space-y-2">
       
@@ -121,11 +127,6 @@
         <div class="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-100 text-[11px]">
           <span id="prev-reimburse-label" class="text-amber-700 font-medium">💼 ต้องเบิกรอบก่อน</span>
           <span id="prev-reimburse" class="font-bold text-amber-700 tabular-nums">฿0</span>
-        </div>
-        <!-- แถวยอดที่ต้องเก็บจากคนอื่น (ส่วนคนอื่นของรายการหาร) -->
-        <div class="flex items-center justify-between mt-1 text-[11px]">
-          <span class="text-purple-700 font-medium">💸 ต้องเก็บจากคนอื่น</span>
-          <span id="prev-others" class="font-bold text-purple-700 tabular-nums">฿0</span>
         </div>
       </div>
 
@@ -163,11 +164,6 @@
             <div class="flex items-center justify-between text-xs">
               <span class="text-amber-300 text-[10px] font-medium flex items-center gap-0.5">💼 เบิก</span>
               <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-reimburse">฿0</span>
-            </div>
-            <div class="h-px bg-white/10"></div>
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-purple-300 text-[10px] font-medium flex items-center gap-0.5">💸 เก็บคนอื่น</span>
-              <span class="font-bold text-white text-xs ml-2 tabular-nums" id="cur-others">฿0</span>
             </div>
           </div>
         </div>
@@ -684,28 +680,28 @@
 
     function recalculateSummary() {
       if (!cycleDates) return;
-      const cur = { total: 0, personal: 0, sharing: 0, reimburse: 0, others: 0 };
-      const prev = { total: 0, personal: 0, sharing: 0, reimburse: 0, others: 0 };
+      const cur = { total: 0, personal: 0, sharing: 0, reimburse: 0 };
+      const prev = { total: 0, personal: 0, sharing: 0, reimburse: 0 };
 
       cachedTransactions.forEach(tx => {
         const parts = String(tx.date).split('-');
         if (parts.length === 3) {
           const txTime = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0).getTime();
           const amt = parseFloat(tx.amount) || 0;
-          const key = typeKey(tx.type);
           const reimb = isReimburse(tx);
-          const others = othersShare(tx);
+          // รายการหารที่ระบุส่วนแบ่ง: ส่วนของฉันนับเป็น "เดี่ยว" ส่วนคนอื่นนับเป็น "หาร"
+          // รายการหารที่ไม่ได้ระบุส่วนแบ่ง นับเป็น "หาร" ทั้งก้อน
+          const personalPart = typeKey(tx.type) === 'sharing' ? (myShareOf(tx) || 0) : amt;
+          const sharingPart = amt - personalPart;
 
-          if (txTime >= cycleDates.current.startMs && txTime <= cycleDates.current.endMs) {
-            cur.total += amt;
-            cur[key] += amt;
-            if (reimb) cur.reimburse += amt;
-            cur.others += others;
-          } else if (txTime >= cycleDates.previous.startMs && txTime <= cycleDates.previous.endMs) {
-            prev.total += amt;
-            prev[key] += amt;
-            if (reimb) prev.reimburse += amt;
-            prev.others += others;
+          const target = txTime >= cycleDates.current.startMs && txTime <= cycleDates.current.endMs ? cur
+            : txTime >= cycleDates.previous.startMs && txTime <= cycleDates.previous.endMs ? prev
+            : null;
+          if (target) {
+            target.total += amt;
+            target.personal += personalPart;
+            target.sharing += sharingPart;
+            if (reimb) target.reimburse += amt;
           }
         }
       });
@@ -738,7 +734,6 @@
       document.getElementById(`${prefix}-personal`).textContent = formatCurrency(s.personal);
       document.getElementById(`${prefix}-sharing`).textContent = formatCurrency(s.sharing);
       document.getElementById(`${prefix}-reimburse`).textContent = formatCurrency(s.reimburse);
-      document.getElementById(`${prefix}-others`).textContent = formatCurrency(s.others);
     }
 
     // ส่วนของฉันในรายการหาร (null = ไม่ได้ระบุ เช่น รายการเก่าก่อนมีฟีเจอร์นี้)
@@ -748,7 +743,7 @@
       return isNaN(n) ? null : n;
     }
 
-    // ยอดที่ต้องเก็บจากคนอื่น = ยอดเงิน - ส่วนของฉัน
+    // ส่วนคนอื่น = ยอดเงิน - ส่วนของฉัน
     function othersShare(tx) {
       const mine = myShareOf(tx);
       return mine === null ? 0 : (parseFloat(tx.amount) || 0) - mine;
@@ -824,7 +819,7 @@
         el.hint.textContent = 'ใส่ยอดเงิน แล้วเลือก ÷2 ÷3 ÷4 หรือพิมพ์ส่วนของฉันเอง';
       } else {
         const people = typeof mode === 'number' ? ` (หารเท่ากัน ${mode} คน)` : '';
-        el.hint.textContent = `ฉันจ่ายจริง ${formatCurrency(el.mine.value)} · ต้องเก็บคนอื่น ${formatCurrency(el.other.value)}${people}`;
+        el.hint.textContent = `${formatCurrency(el.mine.value)} → เดี่ยว · ${formatCurrency(el.other.value)} → หาร${people}`;
       }
     }
 
@@ -1070,7 +1065,11 @@
       // คำนวณช่วงรอบบิลใหม่ทุกครั้ง เผื่อเปิดแอปค้างไว้ข้ามวันตัดรอบ
       initCycleDates();
 
-      cachedTransactions = sortTransactions(data.transactions || []);
+      // Code.gs เวอร์ชันใหม่ส่ง field myShare มาทุกรายการ (null ถ้าไม่มี) ถ้าไม่มีแปลว่ายังไม่ได้ deploy
+      const txs = data.transactions || [];
+      document.getElementById('outdated-banner').classList.toggle('hidden', txs.length === 0 || 'myShare' in txs[0]);
+
+      cachedTransactions = sortTransactions(txs);
       // คำนวณยอดสรุปจากรายการที่โหลดมา (ครอบคลุมรอบก่อนหน้า+ปัจจุบันแล้ว) ให้ตรงกับหน้าจอเสมอ
       recalculateSummary();
       renderTransactions(cachedTransactions);

@@ -150,8 +150,8 @@ function getInitialData() {
 
   const transactions = [];
 
-  let curTotal = 0, curPersonal = 0, curSharing = 0, curReimburse = 0, curOthers = 0;
-  let prevTotal = 0, prevPersonal = 0, prevSharing = 0, prevReimburse = 0, prevOthers = 0;
+  let curTotal = 0, curPersonal = 0, curSharing = 0, curReimburse = 0;
+  let prevTotal = 0, prevPersonal = 0, prevSharing = 0, prevReimburse = 0;
 
   // วนลูปอ่านข้อมูล (ข้ามแถวหัวตาราง i=0)
   for (let i = 1; i < data.length; i++) {
@@ -169,9 +169,15 @@ function getInitialData() {
       type = 'Personal';
       reimburse = true;
     }
-    // ส่วนของฉันในรายการหาร (null = ไม่ได้ระบุ) ส่วนที่เหลือคือยอดที่ต้องเก็บจากคนอื่น
+    // ส่วนของฉันในรายการหาร ('' = ไม่ได้ระบุ)
     const myShare = parseShare(type, row[MYSHARE_COL - 1]);
-    const othersShare = myShare === '' ? 0 : amount - myShare;
+    // ยอดสรุป: รายการหารที่ระบุส่วนแบ่ง ส่วนของฉันนับเป็น "เดี่ยว" ส่วนคนอื่นนับเป็น "หาร"
+    // รายการหารที่ไม่ได้ระบุส่วนแบ่ง นับเป็น "หาร" ทั้งก้อนเหมือนเดิม
+    let personalPart = amount, sharingPart = 0;
+    if (type.toLowerCase() === 'sharing') {
+      personalPart = myShare === '' ? 0 : myShare;
+      sharingPart = amount - personalPart;
+    }
     const createdAt = row[5] ? Utilities.formatDate(new Date(row[5]), tz, 'yyyy-MM-dd HH:mm') : '';
 
     let dateObj;
@@ -187,25 +193,17 @@ function getInitialData() {
     // สะสมยอดรอบปัจจุบัน
     if (txTime >= currentCycle.start.getTime() && txTime <= currentCycle.end.getTime()) {
       curTotal += amount;
-      if (type.toLowerCase() === 'sharing') {
-        curSharing += amount;
-      } else {
-        curPersonal += amount;
-      }
+      curPersonal += personalPart;
+      curSharing += sharingPart;
       if (reimburse) curReimburse += amount;
-      curOthers += othersShare;
     }
 
     // สะสมยอดรอบก่อนหน้า
     if (txTime >= previousCycle.start.getTime() && txTime <= previousCycle.end.getTime()) {
       prevTotal += amount;
-      if (type.toLowerCase() === 'sharing') {
-        prevSharing += amount;
-      } else {
-        prevPersonal += amount;
-      }
+      prevPersonal += personalPart;
+      prevSharing += sharingPart;
       if (reimburse) prevReimburse += amount;
-      prevOthers += othersShare;
     }
 
     let createdTime = 0;
@@ -262,8 +260,7 @@ function getInitialData() {
       total: prevTotal,
       personal: prevPersonal,
       sharing: prevSharing,
-      reimburse: prevReimburse,
-      others: prevOthers
+      reimburse: prevReimburse
     },
     currentCycle: {
       label: 'รอบปัจจุบัน',
@@ -271,8 +268,7 @@ function getInitialData() {
       total: curTotal,
       personal: curPersonal,
       sharing: curSharing,
-      reimburse: curReimburse,
-      others: curOthers
+      reimburse: curReimburse
     },
     transactions: transactions
   };
